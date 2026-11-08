@@ -117,6 +117,7 @@ export class CalendarView extends ItemView {
 		const container = this.contentEl;
 		container.empty();
 		container.addClass('parallel-notes-calendar-container');
+		container.toggleClass('parallel-notes-year-mode', this.viewMode === 'year');
 		const tr = this.plugin.t.bind(this.plugin);
 
 		const config = this.getConfig();
@@ -157,8 +158,23 @@ export class CalendarView extends ItemView {
 		const prevBtn = monthNavGroup.createEl('button', { cls: 'parallel-notes-nav-btn parallel-notes-caret-btn', text: '▲' });
 		const nextBtn = monthNavGroup.createEl('button', { cls: 'parallel-notes-nav-btn parallel-notes-caret-btn', text: '▼' });
 
-		// Quick year / month switchers
+		// Quick year / month switchers (year first, then month)
 		const switcher = header.createDiv('parallel-notes-header-switcher');
+		const yearSelect = switcher.createEl('select', {
+			cls: 'parallel-notes-year-select',
+		});
+		for (let y = this.currentYear - 10; y <= this.currentYear + 10; y++) {
+			yearSelect.createEl('option', {
+				text: String(y),
+				attr: { value: String(y) },
+			});
+		}
+		yearSelect.value = String(this.currentYear);
+		yearSelect.addEventListener('change', () => {
+			this.currentYear = Number.parseInt(yearSelect.value, 10);
+			this.render();
+		});
+
 		const monthSelect = switcher.createEl('select', {
 			cls: 'parallel-notes-month-select',
 		});
@@ -175,35 +191,18 @@ export class CalendarView extends ItemView {
 			this.render();
 		});
 
-		const yearSelect = switcher.createEl('select', {
-			cls: 'parallel-notes-year-select',
-		});
-		for (let y = this.currentYear - 10; y <= this.currentYear + 10; y++) {
-			yearSelect.createEl('option', {
-				text: String(y),
-				attr: { value: String(y) },
-			});
-		}
-		yearSelect.value = String(this.currentYear);
-		yearSelect.addEventListener('change', () => {
-			this.currentYear = Number.parseInt(yearSelect.value, 10);
-			this.render();
-		});
-
 		const rightControls = header.createDiv('parallel-notes-header-right');
 
-		// Year view toggle (only meaningful when a monthly source is configured)
-		if (config.monthlySource) {
-			const yearBtn = rightControls.createEl('button', {
-				cls: 'parallel-notes-today-btn',
-				text: tr('calendar.yearView'),
-				attr: { title: tr('calendar.yearView') },
-			});
-			yearBtn.addEventListener('click', () => {
-				this.viewMode = 'year';
-				this.render();
-			});
-		}
+		// Year view toggle is always available
+		const yearBtn = rightControls.createEl('button', {
+			cls: 'parallel-notes-today-btn',
+			text: tr('calendar.yearView'),
+			attr: { title: tr('calendar.yearView') },
+		});
+		yearBtn.addEventListener('click', () => {
+			this.viewMode = 'year';
+			this.render();
+		});
 
 		const noteNavGroup = rightControls.createDiv('parallel-notes-nav-group');
 		noteNavGroup.createEl('button', {
