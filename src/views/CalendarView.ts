@@ -69,12 +69,28 @@ export class CalendarView extends ItemView {
 	}
 
 	async onOpen(): Promise<void> {
+		this.registerEvent(
+			this.app.workspace.on('active-leaf-change', () => {
+				this.render();
+			}),
+		);
+		this.registerEvent(
+			this.app.workspace.on('file-open', () => {
+				this.render();
+			}),
+		);
 		this.render();
 	}
 
 	async onClose(): Promise<void> {}
 
 	public refresh(): void {
+		this.render();
+	}
+
+	public setMonth(year: number, month: number): void {
+		this.currentYear = year;
+		this.currentMonth = month;
 		this.render();
 	}
 
@@ -108,6 +124,7 @@ export class CalendarView extends ItemView {
 		const today = new Date();
 		const language = this.plugin.getLanguage();
 		const tr = this.plugin.t.bind(this.plugin);
+		const activeFilePath = this.app.workspace.getActiveFile()?.path ?? null;
 
 		// ── Header ────────────────────────────────────────────────────────────
 		const header = container.createDiv('parallel-notes-calendar-header');
@@ -122,9 +139,29 @@ export class CalendarView extends ItemView {
 		});
 
 		const rightControls = header.createDiv('parallel-notes-header-right');
+
+		const prevNoteBtn = rightControls.createEl('button', {
+			cls: 'parallel-notes-nav-btn parallel-notes-note-nav-btn',
+			text: '←',
+			attr: { 'aria-label': tr('calendar.previousNote'), title: tr('calendar.previousNote') },
+		});
+		const nextNoteBtn = rightControls.createEl('button', {
+			cls: 'parallel-notes-nav-btn parallel-notes-note-nav-btn',
+			text: '→',
+			attr: { 'aria-label': tr('calendar.nextNote'), title: tr('calendar.nextNote') },
+		});
+
 		const todayBtn = rightControls.createEl('button', {
 			cls: 'parallel-notes-today-btn',
 			text: tr('calendar.today'),
+		});
+
+		prevNoteBtn.addEventListener('click', () => {
+			void this.plugin.navigateToAdjacentNote('prev');
+		});
+
+		nextNoteBtn.addEventListener('click', () => {
+			void this.plugin.navigateToAdjacentNote('next');
 		});
 
 		prevBtn.addEventListener('click', () => {
@@ -188,6 +225,7 @@ export class CalendarView extends ItemView {
 		for (let d = 1; d <= daysInMonth; d++) {
 			const date = new Date(this.currentYear, this.currentMonth, d);
 			const isToday = isSameDay(date, today);
+			let hasActiveNote = false;
 
 			const cell = grid.createDiv(
 				'parallel-notes-day-cell' + (isToday ? ' parallel-notes-today' : ''),
@@ -210,9 +248,13 @@ export class CalendarView extends ItemView {
 						const filePath = getFilePath(source.pathTemplate, date);
 						const file = this.app.vault.getAbstractFileByPath(filePath);
 						const exists = file instanceof TFile;
+						const isActive = activeFilePath !== null && activeFilePath === filePath;
+						if (isActive) {
+							hasActiveNote = true;
+						}
 
 						const indicator = sourcesRow.createDiv({
-							cls: `parallel-notes-source-indicator ${exists ? 'exists' : 'missing'}`,
+							cls: `parallel-notes-source-indicator ${exists ? 'exists' : 'missing'}${isActive ? ' active' : ''}`,
 						});
 						if (exists) {
 							indicator.style.backgroundColor = source.color;
@@ -225,6 +267,10 @@ export class CalendarView extends ItemView {
 						});
 					}
 				}
+			}
+
+			if (hasActiveNote) {
+				cell.addClass('parallel-notes-day-cell-active');
 			}
 		}
 

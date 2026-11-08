@@ -63,6 +63,11 @@
 	color: var(--text-normal);
 }
 
+.parallel-notes-note-nav-btn {
+	font-size: 13px;
+	padding: 3px 8px;
+}
+
 /* ── Legend ─────────────────────────────────────────────────────────────── */
 
 .parallel-notes-legend {
@@ -120,6 +125,11 @@
 	min-height: var(--parallel-notes-day-cell-min-height, 44px);
 }
 
+.parallel-notes-day-cell-active {
+	background: var(--background-modifier-hover);
+	box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+
 .parallel-notes-day-empty {
 	background: transparent;
 }
@@ -172,6 +182,13 @@
 .parallel-notes-source-indicator:hover {
 	filter: brightness(1.2);
 	opacity: 1;
+}
+
+.parallel-notes-source-indicator.active {
+	outline: 2px solid var(--color-accent);
+	outline-offset: -1px;
+	box-shadow: 0 0 6px var(--color-accent);
+	z-index: 1;
 }
 
 /* ── Empty state ─────────────────────────────────────────────────────────── */

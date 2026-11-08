@@ -1,8 +1,9 @@
-import { Plugin } from 'obsidian';
+import { Notice, Plugin, TFile } from 'obsidian';
 import type { ParallelNotesSettings, CalendarViewConfig } from './types';
 import { DEFAULT_SETTINGS, ParallelNotesSettingTab } from './settings';
 import { CALENDAR_VIEW_TYPE, CalendarView } from './views/CalendarView';
 import { resolveLanguage, t, type ResolvedLanguage } from './i18n';
+import { extractDateFromPath, getFilePath } from './utils/dateUtils';
 import {
 	DEFAULT_DAY_CELL_MIN_HEIGHT,
 	DEFAULT_SOURCE_INDICATOR_HEIGHT,
@@ -12,9 +13,29 @@ import {
 
 export default class ParallelNotesPlugin extends Plugin {
 	settings: ParallelNotesSettings;
+	lastActiveFilePath: string | null = null;
 
 	async onload(): Promise<void> {
 		await this.loadSettings();
+
+		this.lastActiveFilePath = this.app.workspace.getActiveFile()?.path ?? null;
+
+		this.registerEvent(
+			this.app.workspace.on('file-open', (file) => {
+				if (file) {
+					this.lastActiveFilePath = file.path;
+				}
+			}),
+		);
+
+		this.registerEvent(
+			this.app.workspace.on('active-leaf-change', () => {
+				const file = this.app.workspace.getActiveFile();
+				if (file) {
+					this.lastActiveFilePath = file.path;
+				}
+			}),
+		);
 
 		this.registerView(
 			CALENDAR_VIEW_TYPE,
@@ -25,6 +46,7 @@ export default class ParallelNotesPlugin extends Plugin {
 		this.registerVaultRefreshEvents();
 
 		this.registerCalendarCommands();
+		this.registerNavigationCommands();
 
 		this.addRibbonIcon('calendar', this.t('main.ribbonTooltip'), () => {
 			const first = this.settings.calendarViews[0];
@@ -64,6 +86,88 @@ export default class ParallelNotesPlugin extends Plugin {
 				},
 			});
 		}
+	}
+
+	private registerNavigationCommands(): void {
+		this.addCommand({
+			id: 'go-to-previous-note',
+			name: this.t('main.goToPreviousNote'),
+			callback: () => {
+				void this.navigateToAdjacentNote('prev');
+			},
+		});
+
+		this.addCommand({
+			id: 'go-to-next-note',
+			name: this.t('main.goToNextNote'),
+			callback: () => {
+				void this.navigateToAdjacentNote('next');
+			},
+		});
+	}
+
+	async navigateToAdjacentNote(direction: 'prev' | 'next'): Promise<void> {
+		// When the calendar view itself is focused, getActiveFile() returns null.
+		// Fall back to the last opened file so navigation still works.
+		let activeFile = this.app.workspace.getActiveFile();
+		if (!activeFile && this.lastActiveFilePath) {
+			const cached = this.app.vault.getAbstractFileByPath(this.lastActiveFilePath);
+			if (cached instanceof TFile) {
+				activeFile = cached;
+			}
+		}
+		if (!activeFile) {
+			new Notice(this.t('main.noActiveNote'));
+			return;
+		}
+
+		const activeFilePath = activeFile.path;
+		const date = extractDateFromPath(activeFilePath);
+		if (!date) {
+			new Notice(this.t('main.cannotParseDate'));
+			return;
+		}
+
+		// Find the source that matches the current active note
+		for (const config of this.settings.calendarViews) {
+			for (const source of config.sources) {
+				if (getFilePath(source.pathTemplate, date) !== activeFilePath) {
+					continue;
+				}
+
+				const step = direction === 'prev' ? -1 : 1;
+				const currentDate = new Date(date);
+
+				// Search up to 365 days in the given direction
+				for (let i = 0; i < 365; i++) {
+					currentDate.setDate(currentDate.getDate() + step);
+					const filePath = getFilePath(source.pathTemplate, currentDate);
+					const file = this.app.vault.getAbstractFileByPath(filePath);
+					if (file instanceof TFile) {
+						// Open in a markdown leaf, not in the calendar view itself.
+						let leaf = this.app.workspace.getMostRecentLeaf();
+						if (!leaf || leaf.view.getViewType() === CALENDAR_VIEW_TYPE) {
+							const markdownLeaves = this.app.workspace.getLeavesOfType('markdown');
+							leaf = markdownLeaves.length > 0 ? markdownLeaves[0]! : this.app.workspace.getLeaf('tab');
+						}
+						await leaf.openFile(file);
+						this.lastActiveFilePath = file.path;
+						// Sync calendar views to the month of the opened note
+						for (const calLeaf of this.app.workspace.getLeavesOfType(CALENDAR_VIEW_TYPE)) {
+							if (calLeaf.view instanceof CalendarView) {
+								calLeaf.view.setMonth(currentDate.getFullYear(), currentDate.getMonth());
+							}
+						}
+						return;
+					}
+				}
+
+				new Notice(this.t('main.noMoreNotes'));
+				return;
+			}
+		}
+
+		new Notice(this.t('main.noteNotInAnySource'));
 	}
 
 	async openCalendarView(configId: string, newLeaf = false): Promise<void> {

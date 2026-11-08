@@ -6,6 +6,12 @@ export type ResolvedLanguage = 'zh-CN' | 'en';
 type TranslationKey =
 	| 'main.ribbonTooltip'
 	| 'main.openCalendarCommand'
+	| 'main.goToPreviousNote'
+	| 'main.goToNextNote'
+	| 'main.noActiveNote'
+	| 'main.cannotParseDate'
+	| 'main.noMoreNotes'
+	| 'main.noteNotInAnySource'
 	| 'settings.calendarViewsHeading'
 	| 'settings.language.name'
 	| 'settings.language.desc'
@@ -39,12 +45,20 @@ type TranslationKey =
 	| 'calendar.confirmCreateTitle'
 	| 'calendar.confirmCreateDesc'
 	| 'calendar.cancel'
-	| 'calendar.create';
+	| 'calendar.create'
+	| 'calendar.previousNote'
+	| 'calendar.nextNote';
 
 const translations: Record<ResolvedLanguage, Record<TranslationKey, string>> = {
 	'zh-CN': {
 		'main.ribbonTooltip': 'Parallel Notes 日历',
 		'main.openCalendarCommand': '打开日历：{{name}}',
+		'main.goToPreviousNote': '跳转到上一篇日历笔记',
+		'main.goToNextNote': '跳转到下一篇日历笔记',
+		'main.noActiveNote': '当前没有打开的笔记。',
+		'main.cannotParseDate': '无法从当前笔记路径中解析日期。',
+		'main.noMoreNotes': '该方向上没有更多已创建的笔记。',
+		'main.noteNotInAnySource': '当前笔记不属于任何日历来源。',
 		'settings.calendarViewsHeading': '日历视图',
 		'settings.language.name': '语言',
 		'settings.language.desc': '设置插件界面的显示语言。',
@@ -82,10 +96,18 @@ const translations: Record<ResolvedLanguage, Record<TranslationKey, string>> = {
 		'calendar.confirmCreateDesc': '目标文件不存在，是否创建并打开？',
 		'calendar.cancel': '取消',
 		'calendar.create': '创建',
+		'calendar.previousNote': '上一篇笔记',
+		'calendar.nextNote': '下一篇笔记',
 	},
 	en: {
 		'main.ribbonTooltip': 'Parallel Notes calendar',
 		'main.openCalendarCommand': 'Open calendar: {{name}}',
+		'main.goToPreviousNote': 'Go to previous calendar note',
+		'main.goToNextNote': 'Go to next calendar note',
+		'main.noActiveNote': 'No active note.',
+		'main.cannotParseDate': 'Cannot parse a date from the current note path.',
+		'main.noMoreNotes': 'No more existing notes in that direction.',
+		'main.noteNotInAnySource': 'The current note does not belong to any calendar source.',
 		'settings.calendarViewsHeading': 'Calendar views',
 		'settings.language.name': 'Language',
 		'settings.language.desc': 'Choose which language the plugin UI uses.',
@@ -125,6 +147,8 @@ const translations: Record<ResolvedLanguage, Record<TranslationKey, string>> = {
 		'calendar.confirmCreateDesc': 'The target file does not exist. Create and open it?',
 		'calendar.cancel': 'Cancel',
 		'calendar.create': 'Create',
+		'calendar.previousNote': 'Previous note',
+		'calendar.nextNote': 'Next note',
 	},
 };
 
