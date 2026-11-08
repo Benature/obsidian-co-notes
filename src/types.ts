@@ -4,6 +4,10 @@ export interface NoteSource {
 	/** Full path template without .md extension, e.g. "daily/{YYYY}/{MM}/{YYYY-MM-DD}_{ddd}". */
 	pathTemplate: string;
 	color: string;
+	/** Frontmatter checkbox property name to read, e.g. "done". Leave empty to disable. */
+	checkboxProperty?: string;
+	/** Symbol shown on the calendar day when the checkbox is true, e.g. "✓". */
+	markerSymbol?: string;
 }
 
 export interface CalendarViewConfig {

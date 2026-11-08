@@ -172,6 +172,16 @@
 	background-color: var(--background-modifier-border);
 	height: var(--parallel-notes-source-indicator-min-height, 12px);
 	border-radius: 2px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+}
+
+.parallel-notes-source-marker {
+	font-size: calc(var(--parallel-notes-source-indicator-min-height, 12px) * 0.8);
+	line-height: 1;
+	pointer-events: none;
 }
 
 .parallel-notes-source-indicator.missing {
@@ -323,6 +333,15 @@
 .parallel-notes-path-field {
 	flex: 1;
 	min-width: 200px;
+}
+
+.parallel-notes-marker-field {
+	min-width: 90px;
+}
+
+.parallel-notes-marker-select {
+	width: 90px;
+	min-width: 90px;
 }
 
 .parallel-notes-field-label {

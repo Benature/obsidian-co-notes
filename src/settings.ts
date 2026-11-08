@@ -19,6 +19,8 @@ import {
 
 export type { ParallelNotesSettings };
 
+const MARKER_SYMBOL_PRESETS = ['✓', '✅', '⭐', '🔥', '❤️', '📌', '🎯', '💡', '🏆', '❗', '☑️', '✔️'];
+
 export const DEFAULT_SETTINGS: ParallelNotesSettings = {
 	confirmBeforeCreate: true,
 	globalSourceIndicatorHeight: DEFAULT_SOURCE_INDICATOR_HEIGHT,
@@ -319,6 +321,58 @@ export class ParallelNotesSettingTab extends PluginSettingTab {
 		});
 		pathInput.addEventListener('change', () => {
 			source.pathTemplate = pathInput.value;
+			void this.plugin.saveSettings();
+		});
+
+		// Checkbox property field
+		const checkboxField = row.createDiv('parallel-notes-settings-source-field');
+		checkboxField.createEl('label', {
+			text: tr('settings.checkboxProperty'),
+			cls: 'parallel-notes-field-label',
+		});
+		const checkboxInput = checkboxField.createEl('input', {
+			cls: 'parallel-notes-text-input',
+			attr: {
+				type: 'text',
+				value: source.checkboxProperty ?? '',
+				placeholder: tr('settings.checkboxPropertyPlaceholder'),
+			},
+		});
+		checkboxInput.addEventListener('change', () => {
+			source.checkboxProperty = checkboxInput.value.trim() || undefined;
+			void this.plugin.saveSettings();
+		});
+
+		// Marker symbol field (dropdown)
+		const markerField = row.createDiv('parallel-notes-settings-source-field parallel-notes-marker-field');
+		markerField.createEl('label', {
+			text: tr('settings.markerSymbol'),
+			cls: 'parallel-notes-field-label',
+		});
+		const markerSelect = markerField.createEl('select', {
+			cls: 'dropdown parallel-notes-marker-select',
+		});
+
+		const currentSymbol = source.markerSymbol ?? '';
+		markerSelect.createEl('option', {
+			text: tr('settings.markerSymbolDefault'),
+			attr: { value: '' },
+		});
+		// Keep a previously saved custom symbol selectable even if it is not a preset
+		const symbolOptions =
+			currentSymbol && !MARKER_SYMBOL_PRESETS.includes(currentSymbol)
+				? [currentSymbol, ...MARKER_SYMBOL_PRESETS]
+				: MARKER_SYMBOL_PRESETS;
+		for (const symbol of symbolOptions) {
+			markerSelect.createEl('option', {
+				text: symbol,
+				attr: { value: symbol },
+			});
+		}
+		markerSelect.value = currentSymbol;
+
+		markerSelect.addEventListener('change', () => {
+			source.markerSymbol = markerSelect.value || undefined;
 			void this.plugin.saveSettings();
 		});
 

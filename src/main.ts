@@ -74,6 +74,12 @@ export default class ParallelNotesPlugin extends Plugin {
 				this.refreshAllCalendarViews();
 			}),
 		);
+		// Refresh markers when a note's frontmatter changes
+		this.registerEvent(
+			this.app.metadataCache.on('changed', () => {
+				this.refreshAllCalendarViews();
+			}),
+		);
 	}
 
 	private registerCalendarCommands(): void {

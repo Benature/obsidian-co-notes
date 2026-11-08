@@ -37,6 +37,10 @@ type TranslationKey =
 	| 'settings.sourceName'
 	| 'settings.pathTemplate'
 	| 'settings.pathTemplatePlaceholder'
+	| 'settings.checkboxProperty'
+	| 'settings.checkboxPropertyPlaceholder'
+	| 'settings.markerSymbol'
+	| 'settings.markerSymbolDefault'
 	| 'calendar.defaultTitle'
 	| 'calendar.configMissing'
 	| 'calendar.today'
@@ -87,6 +91,10 @@ const translations: Record<ResolvedLanguage, Record<TranslationKey, string>> = {
 		'settings.sourceName': '名称',
 		'settings.pathTemplate': '路径模板',
 		'settings.pathTemplatePlaceholder': '例如：daily/{YYYY}/{MM}/{YYYY-MM-DD}_{ddd}',
+		'settings.checkboxProperty': 'Checkbox 属性',
+		'settings.checkboxPropertyPlaceholder': '例如：done（留空则不标记）',
+		'settings.markerSymbol': '标记符号',
+		'settings.markerSymbolDefault': '默认 (✓)',
 		'calendar.defaultTitle': '日历',
 		'calendar.configMissing': '未找到日历配置，请在插件设置中检查。',
 		'calendar.today': '今天',
@@ -138,6 +146,10 @@ const translations: Record<ResolvedLanguage, Record<TranslationKey, string>> = {
 		'settings.sourceName': 'Name',
 		'settings.pathTemplate': 'Path template',
 		'settings.pathTemplatePlaceholder': 'e.g. daily/{YYYY}/{MM}/{YYYY-MM-DD}_{ddd}',
+		'settings.checkboxProperty': 'Checkbox property',
+		'settings.checkboxPropertyPlaceholder': 'e.g. done (empty to disable)',
+		'settings.markerSymbol': 'Marker symbol',
+		'settings.markerSymbolDefault': 'Default (✓)',
 		'calendar.defaultTitle': 'Calendar',
 		'calendar.configMissing': 'Calendar config not found. Check the plugin settings.',
 		'calendar.today': 'Today',
