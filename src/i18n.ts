@@ -51,7 +51,14 @@ type TranslationKey =
 	| 'calendar.cancel'
 	| 'calendar.create'
 	| 'calendar.previousNote'
-	| 'calendar.nextNote';
+	| 'calendar.nextNote'
+	| 'calendar.weekHeader'
+	| 'calendar.yearView'
+	| 'calendar.monthView'
+	| 'settings.weeklySource'
+	| 'settings.monthlySource'
+	| 'settings.weeklySourceHint'
+	| 'settings.monthlySourceHint';
 
 const translations: Record<ResolvedLanguage, Record<TranslationKey, string>> = {
 	'zh-CN': {
@@ -106,6 +113,13 @@ const translations: Record<ResolvedLanguage, Record<TranslationKey, string>> = {
 		'calendar.create': '创建',
 		'calendar.previousNote': '上一篇笔记',
 		'calendar.nextNote': '下一篇笔记',
+		'calendar.weekHeader': '周',
+		'calendar.yearView': '年历',
+		'calendar.monthView': '月历',
+		'settings.weeklySource': '周记来源',
+		'settings.monthlySource': '月记来源',
+		'settings.weeklySourceHint': '在月历每周行左侧显示，路径模板可用 {WW} 等周格式。',
+		'settings.monthlySourceHint': '在年历视图中显示，路径模板可用 {YYYY}、{MM}。',
 	},
 	en: {
 		'main.ribbonTooltip': 'Parallel Notes calendar',
@@ -161,12 +175,24 @@ const translations: Record<ResolvedLanguage, Record<TranslationKey, string>> = {
 		'calendar.create': 'Create',
 		'calendar.previousNote': 'Previous note',
 		'calendar.nextNote': 'Next note',
+		'calendar.weekHeader': 'W',
+		'calendar.yearView': 'Year',
+		'calendar.monthView': 'Month',
+		'settings.weeklySource': 'Weekly note source',
+		'settings.monthlySource': 'Monthly note source',
+		'settings.weeklySourceHint': 'Shown in a left column of each week row. Week tokens like {WW} are supported.',
+		'settings.monthlySourceHint': 'Shown in the year view. Tokens like {YYYY} and {MM} are supported.',
 	},
 };
 
 const WEEKDAY_LABELS: Record<ResolvedLanguage, string[]> = {
 	'zh-CN': ['日', '一', '二', '三', '四', '五', '六'],
 	en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+};
+
+const MONTH_LABELS: Record<ResolvedLanguage, string[]> = {
+	'zh-CN': ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+	en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
 };
 
 export function resolveLanguage(language: ParallelNotesLanguage): ResolvedLanguage {
@@ -181,6 +207,10 @@ export function resolveLanguage(language: ParallelNotesLanguage): ResolvedLangua
 
 export function getWeekdayLabels(language: ResolvedLanguage): string[] {
 	return WEEKDAY_LABELS[language];
+}
+
+export function getMonthLabels(language: ResolvedLanguage): string[] {
+	return MONTH_LABELS[language];
 }
 
 export function formatMonthLabel(date: Date, language: ResolvedLanguage): string {

@@ -42,6 +42,50 @@
 	background: var(--background-modifier-active-hover);
 }
 
+.parallel-notes-nav-group {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+	justify-content: center;
+}
+
+.parallel-notes-nav-group .parallel-notes-nav-btn {
+	padding: 0 6px;
+	margin: 0;
+	font-size: 12px;
+	line-height: 1.25;
+	height: 15px;
+	min-height: 0;
+	background: transparent;
+	border: none;
+	border-radius: 3px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--text-muted);
+}
+
+.parallel-notes-nav-group .parallel-notes-nav-btn:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.parallel-notes-nav-group .parallel-notes-caret-btn {
+	font-size: 9px;
+}
+
+.parallel-notes-today-icon-btn {
+	background: transparent;
+	border: none;
+	margin: 0;
+	color: var(--text-muted);
+}
+
+.parallel-notes-today-icon-btn:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
 .parallel-notes-month-title {
 	font-size: 15px;
 	font-weight: 600;
@@ -74,9 +118,9 @@
 	display: flex;
 	flex-wrap: wrap;
 	gap: 12px;
-	margin-bottom: 10px;
-	padding-bottom: 10px;
-	border-bottom: 1px solid var(--background-modifier-border);
+	margin-top: 10px;
+	padding-top: 10px;
+	border-top: 1px solid var(--background-modifier-border);
 }
 
 .parallel-notes-legend-item {
@@ -106,6 +150,160 @@
 	gap: 3px;
 }
 
+.parallel-notes-calendar-with-weekly {
+	grid-template-columns: minmax(34px, 0.35fr) repeat(7, 1fr);
+}
+
+/* ── Weekly note column ─────────────────────────────────────────────────── */
+
+.parallel-notes-weekly-cell {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	border-radius: 5px;
+	background: var(--background-secondary);
+	min-height: var(--parallel-notes-day-cell-min-height, 44px);
+	cursor: pointer;
+}
+
+.parallel-notes-weekly-cell:hover {
+	background: var(--background-modifier-hover);
+}
+
+.parallel-notes-weekly-cell-active {
+	background: var(--background-modifier-hover);
+	box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+
+.parallel-notes-weekly-number {
+	font-size: 10px;
+	padding: 4px 2px 2px;
+	color: var(--text-muted);
+	text-align: center;
+}
+
+.parallel-notes-weekly-indicator {
+	margin-top: auto;
+	margin-bottom: 3px;
+	width: 80%;
+	height: var(--parallel-notes-source-indicator-min-height, 12px);
+	border-radius: 2px;
+	background-color: var(--background-modifier-border);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+}
+
+.parallel-notes-weekly-indicator.missing {
+	opacity: 0.5;
+}
+
+/* ── Year view ──────────────────────────────────────────────────────────── */
+
+.parallel-notes-year-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 8px;
+	margin-top: 8px;
+}
+
+.parallel-notes-month-cell {
+	display: flex;
+	flex-direction: column;
+	border-radius: 8px;
+	background: var(--background-secondary);
+	padding: 12px;
+	min-height: 72px;
+	cursor: pointer;
+}
+
+.parallel-notes-month-cell:hover {
+	background: var(--background-modifier-hover);
+}
+
+.parallel-notes-current-month {
+	outline: 2px solid var(--color-accent);
+	outline-offset: -2px;
+}
+
+.parallel-notes-month-name {
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--text-normal);
+	margin-bottom: 8px;
+}
+
+.parallel-notes-monthly-indicator {
+	margin-top: auto;
+	height: var(--parallel-notes-source-indicator-min-height, 12px);
+	border-radius: 2px;
+	background-color: var(--background-modifier-border);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+}
+
+.parallel-notes-monthly-indicator.missing {
+	opacity: 0.5;
+}
+
+.parallel-notes-monthly-indicator.active {
+	outline: 2px solid var(--color-accent);
+	outline-offset: -1px;
+}
+
+/* ── Header switchers ───────────────────────────────────────────────────── */
+
+.parallel-notes-header-switcher {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.parallel-notes-month-select,
+.parallel-notes-year-select {
+	appearance: none;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	background: transparent;
+	border: none;
+	outline: none;
+	box-shadow: none;
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--text-normal);
+	cursor: pointer;
+	padding: 3px 6px;
+	border-radius: 4px;
+	text-align: center;
+	text-align-last: center;
+	width: auto;
+}
+
+.parallel-notes-month-select:hover,
+.parallel-notes-year-select:hover {
+	background: var(--background-modifier-hover);
+}
+
+.parallel-notes-month-select option,
+.parallel-notes-year-select option {
+	font-weight: 400;
+	text-align: left;
+}
+
+.parallel-notes-today-icon-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.parallel-notes-today-icon-btn svg {
+	width: 15px;
+	height: 15px;
+}
+
 .parallel-notes-day-header {
 	text-align: center;
 	font-size: 11px;
@@ -132,6 +330,10 @@
 
 .parallel-notes-day-empty {
 	background: transparent;
+}
+
+.parallel-notes-day-other-month {
+	opacity: 0.45;
 }
 
 .parallel-notes-today {

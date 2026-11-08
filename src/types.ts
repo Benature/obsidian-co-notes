@@ -14,6 +14,10 @@ export interface CalendarViewConfig {
 	id: string;
 	name: string;
 	sources: NoteSource[];
+	/** Optional weekly note source shown in a left column of the month calendar. */
+	weeklySource?: NoteSource;
+	/** Optional monthly note source shown in the year calendar. */
+	monthlySource?: NoteSource;
 	sourceIndicatorHeight?: number;
 	dayCellMinHeight?: number;
 }

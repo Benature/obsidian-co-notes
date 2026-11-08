@@ -43,6 +43,11 @@ export function getFilePath(template: string, date: Date): string {
 	return path.endsWith('.md') ? path : `${path}.md`;
 }
 
+/** ISO week number (1-53), consistent with moment's WW format token. */
+export function getIsoWeekNumber(date: Date): number {
+	return moment(date).isoWeek();
+}
+
 export function isSameDay(a: Date, b: Date): boolean {
 	return (
 		a.getFullYear() === b.getFullYear() &&

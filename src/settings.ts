@@ -253,6 +253,163 @@ export class ParallelNotesSettingTab extends PluginSettingTab {
 		addSourceBtn.addEventListener('click', () => {
 			void this.addSource(config);
 		});
+
+		// ── Optional weekly / monthly sources ─────────────────────────────────
+		this.renderOptionalSourceConfig(
+			card,
+			config,
+			'weeklySource',
+			'settings.weeklySource',
+			'settings.weeklySourceHint',
+			'weekly/{GGGG}/{GGGG}-W{WW}',
+		);
+		this.renderOptionalSourceConfig(
+			card,
+			config,
+			'monthlySource',
+			'settings.monthlySource',
+			'settings.monthlySourceHint',
+			'monthly/{YYYY}/{YYYY}-{MM}',
+		);
+	}
+
+	private renderOptionalSourceConfig(
+		container: HTMLElement,
+		config: CalendarViewConfig,
+		key: 'weeklySource' | 'monthlySource',
+		labelKey: 'settings.weeklySource' | 'settings.monthlySource',
+		hintKey: 'settings.weeklySourceHint' | 'settings.monthlySourceHint',
+		defaultPath: string,
+	): void {
+		const tr = this.plugin.t.bind(this.plugin);
+		const section = container.createDiv('parallel-notes-settings-optional-source');
+
+		section.createDiv({
+			text: tr(labelKey),
+			cls: 'parallel-notes-settings-section-title',
+		});
+
+		const source = config[key];
+		if (!source) {
+			const addBtn = section.createEl('button', {
+				text: `+ ${tr(labelKey)}`,
+				cls: 'parallel-notes-btn parallel-notes-btn-secondary',
+			});
+			addBtn.addEventListener('click', () => {
+				config[key] = {
+					id: generateId(),
+					name: tr(labelKey),
+					pathTemplate: defaultPath,
+					color: key === 'weeklySource' ? '#845ef7' : '#20c997',
+				};
+				void this.plugin.saveSettings().then(() => this.update());
+			});
+			section.createDiv({ text: tr(hintKey), cls: 'parallel-notes-field-hint' });
+			return;
+		}
+
+		const row = section.createDiv('parallel-notes-settings-source-item');
+
+		// Color picker
+		const colorWrap = row.createDiv('parallel-notes-settings-source-color');
+		const colorInput = colorWrap.createEl('input', {
+			cls: 'parallel-notes-color-input',
+			attr: { type: 'color', value: source.color },
+		});
+		colorInput.addEventListener('change', () => {
+			source.color = colorInput.value;
+			void this.plugin.saveSettings();
+		});
+
+		// Name field
+		const nameField = row.createDiv('parallel-notes-settings-source-field');
+		nameField.createEl('label', { text: tr('settings.sourceName'), cls: 'parallel-notes-field-label' });
+		const nameInput = nameField.createEl('input', {
+			cls: 'parallel-notes-text-input',
+			attr: { type: 'text', value: source.name },
+		});
+		nameInput.addEventListener('change', () => {
+			source.name = nameInput.value;
+			void this.plugin.saveSettings();
+		});
+
+		// Path template field
+		const pathField = row.createDiv('parallel-notes-settings-source-field parallel-notes-path-field');
+		pathField.createEl('label', { text: tr('settings.pathTemplate'), cls: 'parallel-notes-field-label' });
+		const pathInput = pathField.createEl('input', {
+			cls: 'parallel-notes-text-input parallel-notes-path-input',
+			attr: {
+				type: 'text',
+				value: source.pathTemplate,
+				placeholder: defaultPath,
+			},
+		});
+		pathInput.addEventListener('change', () => {
+			source.pathTemplate = pathInput.value;
+			void this.plugin.saveSettings();
+		});
+
+		// Checkbox property field
+		const checkboxField = row.createDiv('parallel-notes-settings-source-field');
+		checkboxField.createEl('label', {
+			text: tr('settings.checkboxProperty'),
+			cls: 'parallel-notes-field-label',
+		});
+		const checkboxInput = checkboxField.createEl('input', {
+			cls: 'parallel-notes-text-input',
+			attr: {
+				type: 'text',
+				value: source.checkboxProperty ?? '',
+				placeholder: tr('settings.checkboxPropertyPlaceholder'),
+			},
+		});
+		checkboxInput.addEventListener('change', () => {
+			source.checkboxProperty = checkboxInput.value.trim() || undefined;
+			void this.plugin.saveSettings();
+		});
+
+		// Marker symbol field (dropdown)
+		const markerField = row.createDiv('parallel-notes-settings-source-field parallel-notes-marker-field');
+		markerField.createEl('label', {
+			text: tr('settings.markerSymbol'),
+			cls: 'parallel-notes-field-label',
+		});
+		const markerSelect = markerField.createEl('select', {
+			cls: 'dropdown parallel-notes-marker-select',
+		});
+		const currentSymbol = source.markerSymbol ?? '';
+		markerSelect.createEl('option', {
+			text: tr('settings.markerSymbolDefault'),
+			attr: { value: '' },
+		});
+		const symbolOptions =
+			currentSymbol && !MARKER_SYMBOL_PRESETS.includes(currentSymbol)
+				? [currentSymbol, ...MARKER_SYMBOL_PRESETS]
+				: MARKER_SYMBOL_PRESETS;
+		for (const symbol of symbolOptions) {
+			markerSelect.createEl('option', {
+				text: symbol,
+				attr: { value: symbol },
+			});
+		}
+		markerSelect.value = currentSymbol;
+		markerSelect.addEventListener('change', () => {
+			source.markerSymbol = markerSelect.value || undefined;
+			void this.plugin.saveSettings();
+		});
+
+		// Remove button
+		const actionsWrap = row.createDiv('parallel-notes-settings-source-actions');
+		const removeBtn = actionsWrap.createEl('button', {
+			text: '×',
+			cls: 'parallel-notes-btn parallel-notes-btn-icon parallel-notes-btn-danger',
+		});
+		removeBtn.addEventListener('click', () => {
+			delete config[key];
+			void this.plugin.saveSettings().then(() => this.update());
+		});
+
+		section.createDiv({ text: tr(hintKey), cls: 'parallel-notes-field-hint' });
 	}
 
 	private async deleteCalendarView(index: number): Promise<void> {

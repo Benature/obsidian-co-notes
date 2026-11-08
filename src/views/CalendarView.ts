@@ -4,18 +4,19 @@ import {
 	Modal,
 	Notice,
 	Setting,
+	setIcon,
 	TFile,
 	ViewStateResult,
 	WorkspaceLeaf,
 } from 'obsidian';
 import type ParallelNotesPlugin from '../main';
-import { formatMonthLabel, getWeekdayLabels } from '../i18n';
+import { getMonthLabels, getWeekdayLabels } from '../i18n';
 import {
 	type CalendarViewConfig,
 	normalizeDayCellMinHeight,
 	normalizeSourceIndicatorHeight,
 } from '../types';
-import { getFilePath, isSameDay } from '../utils/dateUtils';
+import { getFilePath, getIsoWeekNumber, isSameDay } from '../utils/dateUtils';
 
 export const CALENDAR_VIEW_TYPE = 'parallel-notes-calendar';
 
@@ -24,6 +25,7 @@ export class CalendarView extends ItemView {
 	private configId = '';
 	private currentYear: number;
 	private currentMonth: number;
+	private viewMode: 'month' | 'year' = 'month';
 
 	constructor(leaf: WorkspaceLeaf, plugin: ParallelNotesPlugin) {
 		super(leaf);
@@ -134,7 +136,11 @@ export class CalendarView extends ItemView {
 			'--parallel-notes-day-cell-min-height',
 			`${getDayCellMinHeight(this.plugin)}px`,
 		);
-		this.renderCalendar(container, config);
+		if (this.viewMode === 'year') {
+			this.renderYearCalendar(container, config);
+		} else {
+			this.renderCalendar(container, config);
+		}
 	}
 
 	private renderCalendar(container: HTMLElement, config: CalendarViewConfig): void {
@@ -147,31 +153,75 @@ export class CalendarView extends ItemView {
 		const header = container.createDiv('parallel-notes-calendar-header');
 
 		const leftControls = header.createDiv('parallel-notes-header-left');
-		const prevBtn = leftControls.createEl('button', { cls: 'parallel-notes-nav-btn', text: '‹' });
-		const nextBtn = leftControls.createEl('button', { cls: 'parallel-notes-nav-btn', text: '›' });
+		const monthNavGroup = leftControls.createDiv('parallel-notes-nav-group');
+		const prevBtn = monthNavGroup.createEl('button', { cls: 'parallel-notes-nav-btn parallel-notes-caret-btn', text: '▲' });
+		const nextBtn = monthNavGroup.createEl('button', { cls: 'parallel-notes-nav-btn parallel-notes-caret-btn', text: '▼' });
 
-		header.createSpan({
-			cls: 'parallel-notes-month-title',
-			text: formatMonthLabel(new Date(this.currentYear, this.currentMonth, 1), language),
+		// Quick year / month switchers
+		const switcher = header.createDiv('parallel-notes-header-switcher');
+		const monthSelect = switcher.createEl('select', {
+			cls: 'parallel-notes-month-select',
+		});
+		const monthLabels = getMonthLabels(language);
+		for (let m = 0; m < 12; m++) {
+			monthSelect.createEl('option', {
+				text: monthLabels[m] ?? String(m + 1),
+				attr: { value: String(m) },
+			});
+		}
+		monthSelect.value = String(this.currentMonth);
+		monthSelect.addEventListener('change', () => {
+			this.currentMonth = Number.parseInt(monthSelect.value, 10);
+			this.render();
+		});
+
+		const yearSelect = switcher.createEl('select', {
+			cls: 'parallel-notes-year-select',
+		});
+		for (let y = this.currentYear - 10; y <= this.currentYear + 10; y++) {
+			yearSelect.createEl('option', {
+				text: String(y),
+				attr: { value: String(y) },
+			});
+		}
+		yearSelect.value = String(this.currentYear);
+		yearSelect.addEventListener('change', () => {
+			this.currentYear = Number.parseInt(yearSelect.value, 10);
+			this.render();
 		});
 
 		const rightControls = header.createDiv('parallel-notes-header-right');
 
-		const prevNoteBtn = rightControls.createEl('button', {
+		// Year view toggle (only meaningful when a monthly source is configured)
+		if (config.monthlySource) {
+			const yearBtn = rightControls.createEl('button', {
+				cls: 'parallel-notes-today-btn',
+				text: tr('calendar.yearView'),
+				attr: { title: tr('calendar.yearView') },
+			});
+			yearBtn.addEventListener('click', () => {
+				this.viewMode = 'year';
+				this.render();
+			});
+		}
+
+		const noteNavGroup = rightControls.createDiv('parallel-notes-nav-group');
+		noteNavGroup.createEl('button', {
 			cls: 'parallel-notes-nav-btn parallel-notes-note-nav-btn parallel-notes-prev-note-btn',
 			text: '←',
 			attr: { 'aria-label': tr('calendar.previousNote'), title: tr('calendar.previousNote') },
 		});
-		const nextNoteBtn = rightControls.createEl('button', {
+		noteNavGroup.createEl('button', {
 			cls: 'parallel-notes-nav-btn parallel-notes-note-nav-btn parallel-notes-next-note-btn',
 			text: '→',
 			attr: { 'aria-label': tr('calendar.nextNote'), title: tr('calendar.nextNote') },
 		});
 
 		const todayBtn = rightControls.createEl('button', {
-			cls: 'parallel-notes-today-btn',
-			text: tr('calendar.today'),
+			cls: 'parallel-notes-nav-btn parallel-notes-today-icon-btn',
+			attr: { 'aria-label': tr('calendar.today'), title: tr('calendar.today') },
 		});
+		setIcon(todayBtn, 'rotate-ccw');
 
 		prevBtn.addEventListener('click', () => {
 			if (this.currentMonth === 0) {
@@ -200,7 +250,129 @@ export class CalendarView extends ItemView {
 			this.render();
 		});
 
-		// ── Legend ────────────────────────────────────────────────────────────
+		// ── Calendar grid ─────────────────────────────────────────────────────
+		const grid = container.createDiv('parallel-notes-calendar-grid');
+		const hasWeekly = !!config.weeklySource;
+		if (hasWeekly) {
+			grid.addClass('parallel-notes-calendar-with-weekly');
+		}
+
+		// Header row: optional weekly column + 7 weekday columns
+		if (hasWeekly) {
+			grid.createDiv({
+				text: tr('calendar.weekHeader'),
+				cls: 'parallel-notes-day-header parallel-notes-weekly-header',
+			});
+		}
+		const dayNames = getWeekdayLabels(language);
+		for (const name of dayNames) {
+			grid.createDiv({ text: name, cls: 'parallel-notes-day-header' });
+		}
+
+		const firstDay = new Date(this.currentYear, this.currentMonth, 1);
+		const daysInMonth = new Date(this.currentYear, this.currentMonth + 1, 0).getDate();
+		const prevMonthDays = new Date(this.currentYear, this.currentMonth, 0).getDate();
+		const leadingEmptyCells = firstDay.getDay();
+		const weekRows = Math.ceil((leadingEmptyCells + daysInMonth) / 7);
+		grid.style.setProperty('--parallel-notes-calendar-week-rows', String(weekRows));
+
+		// Render week by week so the weekly note sits at the start of each row
+		for (let week = 0; week < weekRows; week++) {
+			if (hasWeekly && config.weeklySource) {
+				const weekStartDate = new Date(
+					this.currentYear,
+					this.currentMonth,
+					1 - leadingEmptyCells + week * 7,
+				);
+				this.renderWeeklyCell(grid, config.weeklySource, weekStartDate, activeFilePath);
+			}
+
+			for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
+				const cellIndex = week * 7 + dayOfWeek;
+				let date: Date;
+				const isOtherMonth =
+					cellIndex < leadingEmptyCells || cellIndex >= leadingEmptyCells + daysInMonth;
+
+				if (cellIndex < leadingEmptyCells) {
+					// Days from the previous month
+					const d = prevMonthDays - leadingEmptyCells + 1 + cellIndex;
+					date = new Date(this.currentYear, this.currentMonth - 1, d);
+				} else if (cellIndex >= leadingEmptyCells + daysInMonth) {
+					// Days from the next month
+					const d = cellIndex - leadingEmptyCells - daysInMonth + 1;
+					date = new Date(this.currentYear, this.currentMonth + 1, d);
+				} else {
+					const d = cellIndex - leadingEmptyCells + 1;
+					date = new Date(this.currentYear, this.currentMonth, d);
+				}
+
+				const isToday = isSameDay(date, today);
+				let hasActiveNote = false;
+
+				const cell = grid.createDiv(
+					'parallel-notes-day-cell' +
+						(isToday ? ' parallel-notes-today' : '') +
+						(isOtherMonth ? ' parallel-notes-day-other-month' : ''),
+				);
+				cell.createDiv({ text: String(date.getDate()), cls: 'parallel-notes-day-number' });
+
+				if (config.sources.length > 0) {
+					const sourcesWrap = cell.createDiv('parallel-notes-day-sources');
+					let sourceIndex = 0;
+					for (const rowLength of getSourceRowLengths(config.sources.length)) {
+						const sourcesRow = sourcesWrap.createDiv('parallel-notes-day-sources-row');
+						sourcesRow.style.gridTemplateColumns = `repeat(${rowLength}, minmax(0, 1fr))`;
+
+						for (let i = 0; i < rowLength; i++) {
+							const source = config.sources[sourceIndex++];
+							if (!source) {
+								continue;
+							}
+
+							const filePath = getFilePath(source.pathTemplate, date);
+							const file = this.app.vault.getAbstractFileByPath(filePath);
+							const exists = file instanceof TFile;
+							const isActive = activeFilePath !== null && activeFilePath === filePath;
+							if (isActive) {
+								hasActiveNote = true;
+							}
+
+							const indicator = sourcesRow.createDiv({
+								cls: `parallel-notes-source-indicator ${exists ? 'exists' : 'missing'}${isActive ? ' active' : ''}`,
+							});
+							if (exists) {
+								indicator.style.backgroundColor = source.color;
+							}
+
+							if (exists && source.checkboxProperty) {
+								const checked = isCheckboxChecked(this.app, file, source.checkboxProperty);
+								if (checked) {
+									indicator.addClass('has-marker');
+									const markerSpan = indicator.createSpan({
+										text: source.markerSymbol || '✓',
+										cls: 'parallel-notes-source-marker',
+									});
+									markerSpan.style.color = getContrastColor(source.color);
+								}
+							}
+
+							indicator.title = `${source.name}${exists ? '' : tr('calendar.missingNoteSuffix')}`;
+
+							indicator.addEventListener('click', (e: MouseEvent) => {
+								e.stopPropagation();
+								void this.openOrCreateNote(filePath);
+							});
+						}
+					}
+				}
+
+				if (hasActiveNote) {
+					cell.addClass('parallel-notes-day-cell-active');
+				}
+			}
+		}
+
+		// ── Legend (bottom) ───────────────────────────────────────────────────
 		if (config.sources.length > 0) {
 			const legend = container.createDiv('parallel-notes-legend');
 			for (const source of config.sources) {
@@ -210,95 +382,159 @@ export class CalendarView extends ItemView {
 				item.createSpan({ text: source.name });
 			}
 		}
+	}
 
-		// ── Calendar grid ─────────────────────────────────────────────────────
-		const grid = container.createDiv('parallel-notes-calendar-grid');
+	private renderWeeklyCell(
+		grid: HTMLElement,
+		source: NonNullable<CalendarViewConfig['weeklySource']>,
+		weekStartDate: Date,
+		activeFilePath: string | null,
+	): void {
+		const tr = this.plugin.t.bind(this.plugin);
+		const filePath = getFilePath(source.pathTemplate, weekStartDate);
+		const file = this.app.vault.getAbstractFileByPath(filePath);
+		const exists = file instanceof TFile;
+		const isActive = activeFilePath !== null && activeFilePath === filePath;
 
-		const dayNames = getWeekdayLabels(language);
-		for (const name of dayNames) {
-			grid.createDiv({ text: name, cls: 'parallel-notes-day-header' });
+		const cell = grid.createDiv('parallel-notes-weekly-cell');
+		if (isActive) {
+			cell.addClass('parallel-notes-weekly-cell-active');
 		}
 
-		const firstDay = new Date(this.currentYear, this.currentMonth, 1);
-		const daysInMonth = new Date(this.currentYear, this.currentMonth + 1, 0).getDate();
-		const leadingEmptyCells = firstDay.getDay();
-		const weekRows = Math.ceil((leadingEmptyCells + daysInMonth) / 7);
-		grid.style.setProperty('--parallel-notes-calendar-week-rows', String(weekRows));
+		cell.createDiv({
+			text: `W${getIsoWeekNumber(weekStartDate)}`,
+			cls: 'parallel-notes-weekly-number',
+		});
 
-		// Leading empty cells
-		for (let i = 0; i < leadingEmptyCells; i++) {
-			grid.createDiv('parallel-notes-day-cell parallel-notes-day-empty');
+		const indicator = cell.createDiv({
+			cls: `parallel-notes-weekly-indicator ${exists ? 'exists' : 'missing'}`,
+		});
+		if (exists) {
+			indicator.style.backgroundColor = source.color;
 		}
 
-		// Day cells
-		for (let d = 1; d <= daysInMonth; d++) {
-			const date = new Date(this.currentYear, this.currentMonth, d);
-			const isToday = isSameDay(date, today);
-			let hasActiveNote = false;
+		if (exists && source.checkboxProperty) {
+			const checked = isCheckboxChecked(this.app, file, source.checkboxProperty);
+			if (checked) {
+				const markerSpan = indicator.createSpan({
+					text: source.markerSymbol || '✓',
+					cls: 'parallel-notes-source-marker',
+				});
+				markerSpan.style.color = getContrastColor(source.color);
+			}
+		}
+
+		cell.title = `${source.name}${exists ? '' : tr('calendar.missingNoteSuffix')}`;
+		cell.addEventListener('click', () => {
+			void this.openOrCreateNote(filePath);
+		});
+	}
+
+	private renderYearCalendar(container: HTMLElement, config: CalendarViewConfig): void {
+		const language = this.plugin.getLanguage();
+		const tr = this.plugin.t.bind(this.plugin);
+		const activeFilePath = this.app.workspace.getActiveFile()?.path ?? null;
+		const today = new Date();
+
+		// ── Header ────────────────────────────────────────────────────────────
+		const header = container.createDiv('parallel-notes-calendar-header');
+
+		const leftControls = header.createDiv('parallel-notes-header-left');
+		const yearNavGroup = leftControls.createDiv('parallel-notes-nav-group');
+		const prevBtn = yearNavGroup.createEl('button', { cls: 'parallel-notes-nav-btn parallel-notes-caret-btn', text: '▲' });
+		const nextBtn = yearNavGroup.createEl('button', { cls: 'parallel-notes-nav-btn parallel-notes-caret-btn', text: '▼' });
+
+		prevBtn.addEventListener('click', () => {
+			this.currentYear--;
+			this.render();
+		});
+		nextBtn.addEventListener('click', () => {
+			this.currentYear++;
+			this.render();
+		});
+
+		header.createSpan({
+			cls: 'parallel-notes-month-title',
+			text: String(this.currentYear),
+		});
+
+		const rightControls = header.createDiv('parallel-notes-header-right');
+		const monthBtn = rightControls.createEl('button', {
+			cls: 'parallel-notes-today-btn',
+			text: tr('calendar.monthView'),
+		});
+		monthBtn.addEventListener('click', () => {
+			this.viewMode = 'month';
+			this.render();
+		});
+
+		const todayBtn = rightControls.createEl('button', {
+			cls: 'parallel-notes-nav-btn parallel-notes-today-icon-btn',
+			attr: { 'aria-label': tr('calendar.today'), title: tr('calendar.today') },
+		});
+		setIcon(todayBtn, 'rotate-ccw');
+		todayBtn.addEventListener('click', () => {
+			const now = new Date();
+			this.currentYear = now.getFullYear();
+			this.currentMonth = now.getMonth();
+			this.viewMode = 'month';
+			this.render();
+		});
+
+		// ── Month grid ────────────────────────────────────────────────────────
+		const grid = container.createDiv('parallel-notes-year-grid');
+		const monthLabels = getMonthLabels(language);
+		const monthlySource = config.monthlySource;
+
+		for (let m = 0; m < 12; m++) {
+			const monthDate = new Date(this.currentYear, m, 1);
+			const isCurrentMonth =
+				today.getFullYear() === this.currentYear && today.getMonth() === m;
 
 			const cell = grid.createDiv(
-				'parallel-notes-day-cell' + (isToday ? ' parallel-notes-today' : ''),
+				'parallel-notes-month-cell' + (isCurrentMonth ? ' parallel-notes-current-month' : ''),
 			);
-			cell.createDiv({ text: String(d), cls: 'parallel-notes-day-number' });
+			cell.createDiv({
+				text: monthLabels[m] ?? String(m + 1),
+				cls: 'parallel-notes-month-name',
+			});
 
-			if (config.sources.length > 0) {
-				const sourcesWrap = cell.createDiv('parallel-notes-day-sources');
-				let sourceIndex = 0;
-				for (const rowLength of getSourceRowLengths(config.sources.length)) {
-					const sourcesRow = sourcesWrap.createDiv('parallel-notes-day-sources-row');
-					sourcesRow.style.gridTemplateColumns = `repeat(${rowLength}, minmax(0, 1fr))`;
+			if (monthlySource) {
+				const filePath = getFilePath(monthlySource.pathTemplate, monthDate);
+				const file = this.app.vault.getAbstractFileByPath(filePath);
+				const exists = file instanceof TFile;
+				const isActive = activeFilePath !== null && activeFilePath === filePath;
 
-					for (let i = 0; i < rowLength; i++) {
-						const source = config.sources[sourceIndex++];
-						if (!source) {
-							continue;
-						}
+				const indicator = cell.createDiv({
+					cls: `parallel-notes-monthly-indicator ${exists ? 'exists' : 'missing'}${isActive ? ' active' : ''}`,
+				});
+				if (exists) {
+					indicator.style.backgroundColor = monthlySource.color;
+				}
 
-						const filePath = getFilePath(source.pathTemplate, date);
-						const file = this.app.vault.getAbstractFileByPath(filePath);
-						const exists = file instanceof TFile;
-						const isActive = activeFilePath !== null && activeFilePath === filePath;
-						if (isActive) {
-							hasActiveNote = true;
-						}
-
-						const indicator = sourcesRow.createDiv({
-							cls: `parallel-notes-source-indicator ${exists ? 'exists' : 'missing'}${isActive ? ' active' : ''}`,
+				if (exists && monthlySource.checkboxProperty) {
+					const checked = isCheckboxChecked(this.app, file, monthlySource.checkboxProperty);
+					if (checked) {
+						const markerSpan = indicator.createSpan({
+							text: monthlySource.markerSymbol || '✓',
+							cls: 'parallel-notes-source-marker',
 						});
-						if (exists) {
-							indicator.style.backgroundColor = source.color;
-						}
-
-						if (exists && source.checkboxProperty) {
-							const checked = isCheckboxChecked(this.app, file, source.checkboxProperty);
-							if (checked) {
-								indicator.addClass('has-marker');
-								const markerSpan = indicator.createSpan({
-									text: source.markerSymbol || '✓',
-									cls: 'parallel-notes-source-marker',
-								});
-								markerSpan.style.color = getContrastColor(source.color);
-							}
-						}
-
-						indicator.title = `${source.name}${exists ? '' : tr('calendar.missingNoteSuffix')}`;
-
-						indicator.addEventListener('click', (e: MouseEvent) => {
-							e.stopPropagation();
-							void this.openOrCreateNote(filePath);
-						});
+						markerSpan.style.color = getContrastColor(monthlySource.color);
 					}
 				}
-			}
 
-			if (hasActiveNote) {
-				cell.addClass('parallel-notes-day-cell-active');
+				cell.title = `${monthlySource.name}${exists ? '' : tr('calendar.missingNoteSuffix')}`;
+				cell.addEventListener('click', () => {
+					void this.openOrCreateNote(filePath);
+				});
+			} else {
+				// No monthly source: clicking a month jumps back to that month view
+				cell.addEventListener('click', () => {
+					this.currentMonth = m;
+					this.viewMode = 'month';
+					this.render();
+				});
 			}
-		}
-
-		const trailingEmptyCells = weekRows * 7 - (leadingEmptyCells + daysInMonth);
-		for (let i = 0; i < trailingEmptyCells; i++) {
-			grid.createDiv('parallel-notes-day-cell parallel-notes-day-empty');
 		}
 	}
 
