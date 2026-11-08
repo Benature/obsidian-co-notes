@@ -69,6 +69,23 @@ export class CalendarView extends ItemView {
 	}
 
 	async onOpen(): Promise<void> {
+		// Use pointerdown instead of click: Obsidian consumes the first click
+		// when it activates an unfocused view, so click would require two clicks.
+		// Event delegation also survives re-renders that replace the buttons.
+		this.contentEl.addEventListener('pointerdown', (e: PointerEvent) => {
+			const target = e.target as HTMLElement | null;
+			if (!target) {
+				return;
+			}
+			if (target.closest('.parallel-notes-prev-note-btn')) {
+				e.preventDefault();
+				void this.plugin.navigateToAdjacentNote('prev');
+			} else if (target.closest('.parallel-notes-next-note-btn')) {
+				e.preventDefault();
+				void this.plugin.navigateToAdjacentNote('next');
+			}
+		});
+
 		this.registerEvent(
 			this.app.workspace.on('active-leaf-change', () => {
 				this.render();
@@ -141,12 +158,12 @@ export class CalendarView extends ItemView {
 		const rightControls = header.createDiv('parallel-notes-header-right');
 
 		const prevNoteBtn = rightControls.createEl('button', {
-			cls: 'parallel-notes-nav-btn parallel-notes-note-nav-btn',
+			cls: 'parallel-notes-nav-btn parallel-notes-note-nav-btn parallel-notes-prev-note-btn',
 			text: '←',
 			attr: { 'aria-label': tr('calendar.previousNote'), title: tr('calendar.previousNote') },
 		});
 		const nextNoteBtn = rightControls.createEl('button', {
-			cls: 'parallel-notes-nav-btn parallel-notes-note-nav-btn',
+			cls: 'parallel-notes-nav-btn parallel-notes-note-nav-btn parallel-notes-next-note-btn',
 			text: '→',
 			attr: { 'aria-label': tr('calendar.nextNote'), title: tr('calendar.nextNote') },
 		});
@@ -154,14 +171,6 @@ export class CalendarView extends ItemView {
 		const todayBtn = rightControls.createEl('button', {
 			cls: 'parallel-notes-today-btn',
 			text: tr('calendar.today'),
-		});
-
-		prevNoteBtn.addEventListener('click', () => {
-			void this.plugin.navigateToAdjacentNote('prev');
-		});
-
-		nextNoteBtn.addEventListener('click', () => {
-			void this.plugin.navigateToAdjacentNote('next');
 		});
 
 		prevBtn.addEventListener('click', () => {

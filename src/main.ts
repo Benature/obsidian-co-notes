@@ -156,7 +156,8 @@ export default class ParallelNotesPlugin extends Plugin {
 							const markdownLeaves = this.app.workspace.getLeavesOfType('markdown');
 							leaf = markdownLeaves.length > 0 ? markdownLeaves[0]! : this.app.workspace.getLeaf('tab');
 						}
-						await leaf.openFile(file);
+						await leaf.openFile(file, { active: true });
+						await this.app.workspace.revealLeaf(leaf);
 						this.lastActiveFilePath = file.path;
 						// Sync calendar views to the month of the opened note
 						for (const calLeaf of this.app.workspace.getLeavesOfType(CALENDAR_VIEW_TYPE)) {
