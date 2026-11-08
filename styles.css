@@ -254,6 +254,25 @@
 	outline-offset: -1px;
 }
 
+.parallel-notes-monthly-indicator {
+	cursor: pointer;
+}
+
+.parallel-notes-month-chart {
+	display: flex;
+	align-items: flex-end;
+	gap: 4px;
+	height: 36px;
+	margin: 8px 0;
+}
+
+.parallel-notes-month-chart-bar {
+	flex: 1;
+	min-height: 0;
+	border-radius: 2px 2px 0 0;
+	background-color: var(--background-modifier-border);
+}
+
 /* ── Header switchers ───────────────────────────────────────────────────── */
 
 .parallel-notes-header-switcher {

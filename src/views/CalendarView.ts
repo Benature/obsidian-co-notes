@@ -499,6 +499,22 @@ export class CalendarView extends ItemView {
 				cls: 'parallel-notes-month-name',
 			});
 
+			// Daily-note count bar chart: one bar per source
+			if (config.sources.length > 0) {
+				const daysInMonth = new Date(this.currentYear, m + 1, 0).getDate();
+				const chart = cell.createDiv('parallel-notes-month-chart');
+				for (const source of config.sources) {
+					const count = this.countNotesInMonth(source, this.currentYear, m);
+					const ratio = daysInMonth > 0 ? count / daysInMonth : 0;
+					const bar = chart.createDiv('parallel-notes-month-chart-bar');
+					bar.style.height = count > 0 ? `${Math.max(ratio * 100, 5)}%` : '0%';
+					if (count > 0) {
+						bar.style.backgroundColor = source.color;
+					}
+					bar.title = `${source.name}: ${count}/${daysInMonth}`;
+				}
+			}
+
 			if (monthlySource) {
 				const filePath = getFilePath(monthlySource.pathTemplate, monthDate);
 				const file = this.app.vault.getAbstractFileByPath(filePath);
@@ -523,19 +539,39 @@ export class CalendarView extends ItemView {
 					}
 				}
 
-				cell.title = `${monthlySource.name}${exists ? '' : tr('calendar.missingNoteSuffix')}`;
-				cell.addEventListener('click', () => {
+				// Clicking the monthly-note indicator opens/creates the monthly note
+				indicator.title = `${monthlySource.name}${exists ? '' : tr('calendar.missingNoteSuffix')}`;
+				indicator.addEventListener('click', (e: MouseEvent) => {
+					e.stopPropagation();
 					void this.openOrCreateNote(filePath);
 				});
-			} else {
-				// No monthly source: clicking a month jumps back to that month view
-				cell.addEventListener('click', () => {
-					this.currentMonth = m;
-					this.viewMode = 'month';
-					this.render();
-				});
+			}
+
+			// Clicking anywhere else on the month cell jumps to that month view
+			cell.title = monthLabels[m] ?? String(m + 1);
+			cell.addEventListener('click', () => {
+				this.currentMonth = m;
+				this.viewMode = 'month';
+				this.render();
+			});
+		}
+	}
+
+	private countNotesInMonth(
+		source: CalendarViewConfig['sources'][number],
+		year: number,
+		month: number,
+	): number {
+		const daysInMonth = new Date(year, month + 1, 0).getDate();
+		let count = 0;
+		for (let d = 1; d <= daysInMonth; d++) {
+			const date = new Date(year, month, d);
+			const filePath = getFilePath(source.pathTemplate, date);
+			if (this.app.vault.getAbstractFileByPath(filePath) instanceof TFile) {
+				count++;
 			}
 		}
+		return count;
 	}
 
 	private async openOrCreateNote(filePath: string): Promise<void> {
