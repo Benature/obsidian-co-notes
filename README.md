@@ -16,6 +16,7 @@ Instead of being limited to a single daily note location, you can define multipl
 - Configurable note path templates with brace-wrapped moment-style date formats
 - Adjustable source indicator height and day cell minimum height
 - Chinese and English UI support
+- Export and import settings as JSON backups
 
 ## How it works
 
@@ -67,6 +68,7 @@ Co Notes currently supports:
 - Global day cell minimum height
 - Multiple calendar views
 - Multiple note sources per calendar view
+- JSON settings export and import
 
 ## Commands
 

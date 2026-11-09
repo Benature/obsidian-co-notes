@@ -24,6 +24,14 @@ type TranslationKey =
 	| 'settings.sourceIndicatorHeight.desc'
 	| 'settings.dayCellMinHeight.name'
 	| 'settings.dayCellMinHeight.desc'
+	| 'settings.transfer.name'
+	| 'settings.transfer.desc'
+	| 'settings.export.button'
+	| 'settings.export.success'
+	| 'settings.export.failed'
+	| 'settings.import.button'
+	| 'settings.import.success'
+	| 'settings.import.failed'
 	| 'settings.calendarViewsDesc'
 	| 'settings.addCalendarView'
 	| 'settings.pathTemplateHint'
@@ -84,6 +92,14 @@ const translations: Record<ResolvedLanguage, Record<TranslationKey, string>> = {
 		'settings.dayCellMinHeight.name': '日期格最低高度',
 		'settings.dayCellMinHeight.desc':
 			'设置所有日历视图中每天那个大格子的最低高度（像素）。',
+		'settings.transfer.name': '配置备份',
+		'settings.transfer.desc': '导出全部配置为 JSON，或导入 JSON 替换当前配置。',
+		'settings.export.button': '导出配置',
+		'settings.export.success': '配置已导出。',
+		'settings.export.failed': '配置导出失败，请重试。',
+		'settings.import.button': '导入配置',
+		'settings.import.success': '配置导入成功。',
+		'settings.import.failed': '配置导入失败，请选择有效的 Co Notes JSON 配置文件。',
 		'settings.calendarViewsDesc': '配置日历视图及每个视图的笔记来源。',
 		'settings.addCalendarView': '+ 添加日历视图',
 		'settings.pathTemplateHint':
@@ -145,6 +161,15 @@ const translations: Record<ResolvedLanguage, Record<TranslationKey, string>> = {
 		'settings.dayCellMinHeight.name': 'Day cell minimum height',
 		'settings.dayCellMinHeight.desc':
 			'Set the minimum height of each day cell in all calendar views (px).',
+		'settings.transfer.name': 'Settings backup',
+		'settings.transfer.desc':
+			'Export all settings as JSON, or import JSON to replace the current settings.',
+		'settings.export.button': 'Export settings',
+		'settings.export.success': 'Settings exported.',
+		'settings.export.failed': 'Could not export settings. Please try again.',
+		'settings.import.button': 'Import settings',
+		'settings.import.success': 'Settings imported.',
+		'settings.import.failed': 'Could not import settings. Choose a valid Co Notes JSON file.',
 		'settings.calendarViewsDesc':
 			'Configure calendar views and the note sources shown in each view.',
 		'settings.addCalendarView': '+ Add calendar view',

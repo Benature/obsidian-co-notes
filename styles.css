@@ -478,6 +478,16 @@
 	margin-bottom: 12px;
 }
 
+.co-notes-settings-transfer-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.co-notes-settings-import-input {
+	display: none;
+}
+
 .co-notes-settings-view-card {
 	border: 1px solid var(--background-modifier-border);
 	border-radius: 8px;

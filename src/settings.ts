@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, type SettingDefinitionItem } from 'obsidian';
+import { App, Notice, PluginSettingTab, type SettingDefinitionItem } from 'obsidian';
 import type CoNotesPlugin from './main';
 import { resolveLanguage, t } from './i18n';
 import {
@@ -16,6 +16,7 @@ import {
 	normalizeDayCellMinHeight,
 	normalizeSourceIndicatorHeight,
 } from './types';
+import { createSettingsExport, parseSettingsImport } from './utils/settingsTransfer';
 
 export type { CoNotesSettings };
 
@@ -110,6 +111,37 @@ export class CoNotesSettingTab extends PluginSettingTab {
 					this.renderCalendarViewSettings(setting.controlEl);
 				},
 			},
+			{
+				name: tr('settings.transfer.name'),
+				desc: tr('settings.transfer.desc'),
+				render: (setting) => {
+					const actions = setting.controlEl.createDiv('co-notes-settings-transfer-actions');
+					const exportBtn = actions.createEl('button', {
+						text: tr('settings.export.button'),
+						cls: 'co-notes-btn',
+						attr: { type: 'button' },
+					});
+					exportBtn.addEventListener('click', () => this.exportSettings());
+
+					const importInput = actions.createEl('input', {
+						cls: 'co-notes-settings-import-input',
+						attr: { type: 'file', accept: '.json,application/json' },
+					});
+					const importBtn = actions.createEl('button', {
+						text: tr('settings.import.button'),
+						cls: 'co-notes-btn',
+						attr: { type: 'button' },
+					});
+					importBtn.addEventListener('click', () => importInput.click());
+					importInput.addEventListener('change', () => {
+						const file = importInput.files?.[0];
+						importInput.value = '';
+						if (file) {
+							void this.importSettings(file);
+						}
+					});
+				},
+			},
 		];
 	}
 
@@ -136,6 +168,38 @@ export class CoNotesSettingTab extends PluginSettingTab {
 
 		await this.plugin.saveSettings();
 		this.update();
+	}
+
+	private exportSettings(): void {
+		try {
+			const { contents, filename } = createSettingsExport(this.plugin.settings);
+			const url = URL.createObjectURL(new Blob([contents], { type: 'application/json' }));
+			const link = activeDocument.createEl('a');
+			link.href = url;
+			link.download = filename;
+			activeDocument.body.appendChild(link);
+			link.click();
+			link.remove();
+			window.setTimeout(() => URL.revokeObjectURL(url), 0);
+			new Notice(this.plugin.t('settings.export.success'));
+		} catch {
+			new Notice(this.plugin.t('settings.export.failed'));
+		}
+	}
+
+	private async importSettings(file: File): Promise<void> {
+		const previousSettings = this.plugin.settings;
+		try {
+			this.plugin.settings = parseSettingsImport(await file.text());
+			await this.plugin.saveSettings();
+		} catch {
+			this.plugin.settings = previousSettings;
+			new Notice(this.plugin.t('settings.import.failed'));
+			return;
+		}
+
+		this.update();
+		new Notice(this.plugin.t('settings.import.success'));
 	}
 
 	private renderCalendarViewSettings(containerEl: HTMLElement): void {
