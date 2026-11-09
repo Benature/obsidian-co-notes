@@ -18,6 +18,14 @@ Instead of being limited to a single daily note location, you can define multipl
 - Chinese and English UI support
 - Export and import settings as JSON backups
 
+## My Story: Collaborating with AI notes without blurring authorship
+
+I keep my own Daily Notes and AI-generated notes in separate folders. My notes capture first-hand experiences, decisions, and feelings; AI notes help organize information, summarize processes, and offer another perspective for reflection. The two kinds of notes complement each other, but they should not become one indistinguishable record.
+
+Keeping them together would blur which parts came from me and which came from AI. Keeping them completely separate, however, makes same-day comparison inconvenient. Co Notes grew out of this tension. I add both folders as sources in the same calendar and give them different colors, so I can immediately see which days have my own notes, which have AI notes, and which have both. Each source opens independently, making the two records easy to compare without mixing them.
+
+Co Notes does not generate AI content or decide which record is more valuable. It keeps each note's source and authorship clear while letting the two timelines appear side by side.
+
 ## How it works
 
 Each calendar view contains one or more note sources.
