@@ -279,15 +279,39 @@
 
 .co-notes-month-chart {
 	display: flex;
-	align-items: flex-end;
+	align-items: stretch;
 	gap: 4px;
 	flex: 1;
-	min-height: 16px;
+	min-height: 28px;
 	margin: 8px 0;
 }
 
-.co-notes-month-chart-bar {
+.co-notes-month-chart-item {
+	display: flex;
 	flex: 1;
+	flex-direction: column;
+	justify-content: flex-end;
+	min-width: 0;
+}
+
+.co-notes-month-chart-count {
+	margin-bottom: 4px;
+	color: var(--text-muted);
+	font-size: 10px;
+	font-variant-numeric: tabular-nums;
+	line-height: 1;
+	text-align: center;
+}
+
+.co-notes-month-chart-track {
+	display: flex;
+	flex: 1;
+	align-items: flex-end;
+	min-height: 0;
+}
+
+.co-notes-month-chart-bar {
+	width: 100%;
 	min-height: 0;
 	border-radius: 2px 2px 0 0;
 	background-color: var(--background-modifier-border);

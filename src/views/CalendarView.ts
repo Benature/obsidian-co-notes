@@ -505,7 +505,13 @@ export class CalendarView extends ItemView {
 				for (const source of config.sources) {
 					const count = this.countNotesInMonth(source, this.currentYear, m);
 					const ratio = daysInMonth > 0 ? count / daysInMonth : 0;
-					const bar = chart.createDiv('co-notes-month-chart-bar');
+					const item = chart.createDiv('co-notes-month-chart-item');
+					item.createSpan({
+						text: String(count),
+						cls: 'co-notes-month-chart-count',
+					});
+					const track = item.createDiv('co-notes-month-chart-track');
+					const bar = track.createDiv('co-notes-month-chart-bar');
 					bar.style.height = count > 0 ? `${Math.max(ratio * 100, 5)}%` : '0%';
 					if (count > 0) {
 						bar.style.backgroundColor = source.color;
