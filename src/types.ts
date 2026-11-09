@@ -22,15 +22,15 @@ export interface CalendarViewConfig {
 	dayCellMinHeight?: number;
 }
 
-export interface ParallelNotesSettings {
+export interface CoNotesSettings {
 	calendarViews: CalendarViewConfig[];
 	confirmBeforeCreate: boolean;
 	globalSourceIndicatorHeight: number;
 	globalDayCellMinHeight: number;
-	language: ParallelNotesLanguage;
+	language: CoNotesLanguage;
 }
 
-export type ParallelNotesLanguage = 'system' | 'zh-CN' | 'en';
+export type CoNotesLanguage = 'system' | 'zh-CN' | 'en';
 
 export const DEFAULT_COLORS = [
 	'#4a9eff',

@@ -12,7 +12,7 @@ let formatPath;
 let getFilePath;
 
 before(async () => {
-	tempDir = await mkdtemp(join(tmpdir(), 'parallel-notes-date-utils-'));
+	tempDir = await mkdtemp(join(tmpdir(), 'co-notes-date-utils-'));
 	const outfile = join(tempDir, 'dateUtils.mjs');
 
 	await build({

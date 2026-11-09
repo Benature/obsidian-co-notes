@@ -1,8 +1,8 @@
-# Parallel Notes
+# Co Notes
 
 [English](./README.md) | [中文](./README.zh-CN.md)
 
-`Parallel Notes` is an Obsidian plugin that lets you visualize notes from multiple folders on a calendar.
+`Co Notes` is an Obsidian plugin that lets you visualize notes from multiple folders on a calendar.
 
 Instead of being limited to a single daily note location, you can define multiple note sources, group them into different calendar views, and see at a glance which notes already exist for each day. Clicking a source indicator opens the note if it exists, or creates it if it does not.
 
@@ -27,7 +27,7 @@ Each source has:
 - A color
 - A path template
 
-For every day in the month, Parallel Notes checks whether the note for each source exists. If it exists, the source indicator is filled with the configured color. If it is missing, the indicator stays empty. Clicking the indicator opens the note or creates it for you.
+For every day in the month, Co Notes checks whether the note for each source exists. If it exists, the source indicator is filled with the configured color. If it is missing, the indicator stays empty. Clicking the indicator opens the note or creates it for you.
 
 ## Example use cases
 
@@ -46,11 +46,11 @@ Examples:
 - `work-log/{YYYY}/{YYYY-MM-DD}`
 - `journal/{YYYY}/{MM}/{YYYY-MM-DD}_{ddd}`
 
-Parallel Notes keeps normal path text outside braces as-is, so the `ss` in `business/{YYYY-MM-DD}` is not parsed as seconds. It automatically appends `.md` if it is missing.
+Co Notes keeps normal path text outside braces as-is, so the `ss` in `business/{YYYY-MM-DD}` is not parsed as seconds. It automatically appends `.md` if it is missing.
 
 ## Usage
 
-1. Open **Settings -> Community plugins -> Parallel Notes**.
+1. Open **Settings -> Community plugins -> Co Notes**.
 2. Create or edit a calendar view.
 3. Add one or more note sources to that view.
 4. Set the path template for each source.
@@ -59,7 +59,7 @@ Parallel Notes keeps normal path text outside braces as-is, so the `ss` in `busi
 
 ## Settings
 
-Parallel Notes currently supports:
+Co Notes currently supports:
 
 - Plugin UI language: system, Chinese, or English
 - Confirm before creating a missing note
@@ -70,7 +70,7 @@ Parallel Notes currently supports:
 
 ## Commands
 
-Parallel Notes registers one command per calendar view:
+Co Notes registers one command per calendar view:
 
 - `Open calendar: <view name>`
 
@@ -105,7 +105,7 @@ npm run lint
 Copy the release files into:
 
 ```text
-<your-vault>/.obsidian/plugins/parallel-notes/
+<your-vault>/.obsidian/plugins/co-notes/
 ```
 
 Required files:
@@ -114,7 +114,7 @@ Required files:
 - `manifest.json`
 - `styles.css`
 
-Then reload Obsidian and enable **Parallel Notes** in **Settings -> Community plugins**.
+Then reload Obsidian and enable **Co Notes** in **Settings -> Community plugins**.
 
 ## Release notes
 

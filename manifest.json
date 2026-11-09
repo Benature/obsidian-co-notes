@@ -1,6 +1,6 @@
 {
-	"id": "parallel-notes",
-	"name": "Parallel Notes",
+	"id": "co-notes",
+	"name": "Co Notes",
 	"version": "1.2.1",
 	"minAppVersion": "1.14.4",
 	"description": "Multiple customizable calendar views to visualize daily notes across different folders.",

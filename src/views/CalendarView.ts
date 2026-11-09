@@ -9,7 +9,7 @@ import {
 	ViewStateResult,
 	WorkspaceLeaf,
 } from 'obsidian';
-import type ParallelNotesPlugin from '../main';
+import type CoNotesPlugin from '../main';
 import { getMonthLabels, getWeekdayLabels } from '../i18n';
 import {
 	type CalendarViewConfig,
@@ -18,16 +18,16 @@ import {
 } from '../types';
 import { getFilePath, getIsoWeekNumber, isSameDay } from '../utils/dateUtils';
 
-export const CALENDAR_VIEW_TYPE = 'parallel-notes-calendar';
+export const CALENDAR_VIEW_TYPE = 'co-notes-calendar';
 
 export class CalendarView extends ItemView {
-	private plugin: ParallelNotesPlugin;
+	private plugin: CoNotesPlugin;
 	private configId = '';
 	private currentYear: number;
 	private currentMonth: number;
 	private viewMode: 'month' | 'year' = 'month';
 
-	constructor(leaf: WorkspaceLeaf, plugin: ParallelNotesPlugin) {
+	constructor(leaf: WorkspaceLeaf, plugin: CoNotesPlugin) {
 		super(leaf);
 		this.plugin = plugin;
 		const now = new Date();
@@ -79,10 +79,10 @@ export class CalendarView extends ItemView {
 			if (!target) {
 				return;
 			}
-			if (target.closest('.parallel-notes-prev-note-btn')) {
+			if (target.closest('.co-notes-prev-note-btn')) {
 				e.preventDefault();
 				void this.plugin.navigateToAdjacentNote('prev');
-			} else if (target.closest('.parallel-notes-next-note-btn')) {
+			} else if (target.closest('.co-notes-next-note-btn')) {
 				e.preventDefault();
 				void this.plugin.navigateToAdjacentNote('next');
 			}
@@ -116,25 +116,25 @@ export class CalendarView extends ItemView {
 	private render(): void {
 		const container = this.contentEl;
 		container.empty();
-		container.addClass('parallel-notes-calendar-container');
-		container.toggleClass('parallel-notes-year-mode', this.viewMode === 'year');
+		container.addClass('co-notes-calendar-container');
+		container.toggleClass('co-notes-year-mode', this.viewMode === 'year');
 		const tr = this.plugin.t.bind(this.plugin);
 
 		const config = this.getConfig();
 		if (!config) {
 			container.createDiv({
-				cls: 'parallel-notes-empty-state',
+				cls: 'co-notes-empty-state',
 				text: tr('calendar.configMissing'),
 			});
 			return;
 		}
 
 		container.style.setProperty(
-			'--parallel-notes-source-indicator-min-height',
+			'--co-notes-source-indicator-min-height',
 			`${getSourceIndicatorHeight(this.plugin)}px`,
 		);
 		container.style.setProperty(
-			'--parallel-notes-day-cell-min-height',
+			'--co-notes-day-cell-min-height',
 			`${getDayCellMinHeight(this.plugin)}px`,
 		);
 		if (this.viewMode === 'year') {
@@ -151,17 +151,17 @@ export class CalendarView extends ItemView {
 		const activeFilePath = this.app.workspace.getActiveFile()?.path ?? null;
 
 		// ── Header ────────────────────────────────────────────────────────────
-		const header = container.createDiv('parallel-notes-calendar-header');
+		const header = container.createDiv('co-notes-calendar-header');
 
-		const leftControls = header.createDiv('parallel-notes-header-left');
-		const monthNavGroup = leftControls.createDiv('parallel-notes-nav-group');
-		const prevBtn = monthNavGroup.createEl('button', { cls: 'parallel-notes-nav-btn parallel-notes-caret-btn', text: '▲' });
-		const nextBtn = monthNavGroup.createEl('button', { cls: 'parallel-notes-nav-btn parallel-notes-caret-btn', text: '▼' });
+		const leftControls = header.createDiv('co-notes-header-left');
+		const monthNavGroup = leftControls.createDiv('co-notes-nav-group');
+		const prevBtn = monthNavGroup.createEl('button', { cls: 'co-notes-nav-btn co-notes-caret-btn', text: '▲' });
+		const nextBtn = monthNavGroup.createEl('button', { cls: 'co-notes-nav-btn co-notes-caret-btn', text: '▼' });
 
 		// Quick year / month switchers (year first, then month)
-		const switcher = header.createDiv('parallel-notes-header-switcher');
+		const switcher = header.createDiv('co-notes-header-switcher');
 		const yearSelect = switcher.createEl('select', {
-			cls: 'parallel-notes-year-select',
+			cls: 'co-notes-year-select',
 		});
 		for (let y = this.currentYear - 10; y <= this.currentYear + 10; y++) {
 			yearSelect.createEl('option', {
@@ -176,7 +176,7 @@ export class CalendarView extends ItemView {
 		});
 
 		const monthSelect = switcher.createEl('select', {
-			cls: 'parallel-notes-month-select',
+			cls: 'co-notes-month-select',
 		});
 		const monthLabels = getMonthLabels(language);
 		for (let m = 0; m < 12; m++) {
@@ -191,11 +191,11 @@ export class CalendarView extends ItemView {
 			this.render();
 		});
 
-		const rightControls = header.createDiv('parallel-notes-header-right');
+		const rightControls = header.createDiv('co-notes-header-right');
 
 		// Year view toggle is always available
 		const yearBtn = rightControls.createEl('button', {
-			cls: 'parallel-notes-today-btn',
+			cls: 'co-notes-today-btn',
 			text: tr('calendar.yearView'),
 			attr: { title: tr('calendar.yearView') },
 		});
@@ -204,20 +204,20 @@ export class CalendarView extends ItemView {
 			this.render();
 		});
 
-		const noteNavGroup = rightControls.createDiv('parallel-notes-nav-group');
+		const noteNavGroup = rightControls.createDiv('co-notes-nav-group');
 		noteNavGroup.createEl('button', {
-			cls: 'parallel-notes-nav-btn parallel-notes-note-nav-btn parallel-notes-prev-note-btn',
+			cls: 'co-notes-nav-btn co-notes-note-nav-btn co-notes-prev-note-btn',
 			text: '←',
 			attr: { 'aria-label': tr('calendar.previousNote'), title: tr('calendar.previousNote') },
 		});
 		noteNavGroup.createEl('button', {
-			cls: 'parallel-notes-nav-btn parallel-notes-note-nav-btn parallel-notes-next-note-btn',
+			cls: 'co-notes-nav-btn co-notes-note-nav-btn co-notes-next-note-btn',
 			text: '→',
 			attr: { 'aria-label': tr('calendar.nextNote'), title: tr('calendar.nextNote') },
 		});
 
 		const todayBtn = rightControls.createEl('button', {
-			cls: 'parallel-notes-nav-btn parallel-notes-today-icon-btn',
+			cls: 'co-notes-nav-btn co-notes-today-icon-btn',
 			attr: { 'aria-label': tr('calendar.today'), title: tr('calendar.today') },
 		});
 		setIcon(todayBtn, 'rotate-ccw');
@@ -250,22 +250,22 @@ export class CalendarView extends ItemView {
 		});
 
 		// ── Calendar grid ─────────────────────────────────────────────────────
-		const grid = container.createDiv('parallel-notes-calendar-grid');
+		const grid = container.createDiv('co-notes-calendar-grid');
 		const hasWeekly = !!config.weeklySource;
 		if (hasWeekly) {
-			grid.addClass('parallel-notes-calendar-with-weekly');
+			grid.addClass('co-notes-calendar-with-weekly');
 		}
 
 		// Header row: optional weekly column + 7 weekday columns
 		if (hasWeekly) {
 			grid.createDiv({
 				text: tr('calendar.weekHeader'),
-				cls: 'parallel-notes-day-header parallel-notes-weekly-header',
+				cls: 'co-notes-day-header co-notes-weekly-header',
 			});
 		}
 		const dayNames = getWeekdayLabels(language);
 		for (const name of dayNames) {
-			grid.createDiv({ text: name, cls: 'parallel-notes-day-header' });
+			grid.createDiv({ text: name, cls: 'co-notes-day-header' });
 		}
 
 		const firstDay = new Date(this.currentYear, this.currentMonth, 1);
@@ -273,7 +273,7 @@ export class CalendarView extends ItemView {
 		const prevMonthDays = new Date(this.currentYear, this.currentMonth, 0).getDate();
 		const leadingEmptyCells = firstDay.getDay();
 		const weekRows = Math.ceil((leadingEmptyCells + daysInMonth) / 7);
-		grid.style.setProperty('--parallel-notes-calendar-week-rows', String(weekRows));
+		grid.style.setProperty('--co-notes-calendar-week-rows', String(weekRows));
 
 		// Render week by week so the weekly note sits at the start of each row
 		for (let week = 0; week < weekRows; week++) {
@@ -309,17 +309,17 @@ export class CalendarView extends ItemView {
 				let hasActiveNote = false;
 
 				const cell = grid.createDiv(
-					'parallel-notes-day-cell' +
-						(isToday ? ' parallel-notes-today' : '') +
-						(isOtherMonth ? ' parallel-notes-day-other-month' : ''),
+					'co-notes-day-cell' +
+						(isToday ? ' co-notes-today' : '') +
+						(isOtherMonth ? ' co-notes-day-other-month' : ''),
 				);
-				cell.createDiv({ text: String(date.getDate()), cls: 'parallel-notes-day-number' });
+				cell.createDiv({ text: String(date.getDate()), cls: 'co-notes-day-number' });
 
 				if (config.sources.length > 0) {
-					const sourcesWrap = cell.createDiv('parallel-notes-day-sources');
+					const sourcesWrap = cell.createDiv('co-notes-day-sources');
 					let sourceIndex = 0;
 					for (const rowLength of getSourceRowLengths(config.sources.length)) {
-						const sourcesRow = sourcesWrap.createDiv('parallel-notes-day-sources-row');
+						const sourcesRow = sourcesWrap.createDiv('co-notes-day-sources-row');
 						sourcesRow.style.gridTemplateColumns = `repeat(${rowLength}, minmax(0, 1fr))`;
 
 						for (let i = 0; i < rowLength; i++) {
@@ -337,7 +337,7 @@ export class CalendarView extends ItemView {
 							}
 
 							const indicator = sourcesRow.createDiv({
-								cls: `parallel-notes-source-indicator ${exists ? 'exists' : 'missing'}${isActive ? ' active' : ''}`,
+								cls: `co-notes-source-indicator ${exists ? 'exists' : 'missing'}${isActive ? ' active' : ''}`,
 							});
 							if (exists) {
 								indicator.style.backgroundColor = source.color;
@@ -349,7 +349,7 @@ export class CalendarView extends ItemView {
 									indicator.addClass('has-marker');
 									const markerSpan = indicator.createSpan({
 										text: source.markerSymbol || '✓',
-										cls: 'parallel-notes-source-marker',
+										cls: 'co-notes-source-marker',
 									});
 									markerSpan.style.color = getContrastColor(source.color);
 								}
@@ -366,17 +366,17 @@ export class CalendarView extends ItemView {
 				}
 
 				if (hasActiveNote) {
-					cell.addClass('parallel-notes-day-cell-active');
+					cell.addClass('co-notes-day-cell-active');
 				}
 			}
 		}
 
 		// ── Legend (bottom) ───────────────────────────────────────────────────
 		if (config.sources.length > 0) {
-			const legend = container.createDiv('parallel-notes-legend');
+			const legend = container.createDiv('co-notes-legend');
 			for (const source of config.sources) {
-				const item = legend.createDiv('parallel-notes-legend-item');
-				const dot = item.createDiv('parallel-notes-legend-dot');
+				const item = legend.createDiv('co-notes-legend-item');
+				const dot = item.createDiv('co-notes-legend-dot');
 				dot.style.backgroundColor = source.color;
 				item.createSpan({ text: source.name });
 			}
@@ -395,18 +395,18 @@ export class CalendarView extends ItemView {
 		const exists = file instanceof TFile;
 		const isActive = activeFilePath !== null && activeFilePath === filePath;
 
-		const cell = grid.createDiv('parallel-notes-weekly-cell');
+		const cell = grid.createDiv('co-notes-weekly-cell');
 		if (isActive) {
-			cell.addClass('parallel-notes-weekly-cell-active');
+			cell.addClass('co-notes-weekly-cell-active');
 		}
 
 		cell.createDiv({
 			text: `W${getIsoWeekNumber(weekStartDate)}`,
-			cls: 'parallel-notes-weekly-number',
+			cls: 'co-notes-weekly-number',
 		});
 
 		const indicator = cell.createDiv({
-			cls: `parallel-notes-weekly-indicator ${exists ? 'exists' : 'missing'}`,
+			cls: `co-notes-weekly-indicator ${exists ? 'exists' : 'missing'}`,
 		});
 		if (exists) {
 			indicator.style.backgroundColor = source.color;
@@ -417,7 +417,7 @@ export class CalendarView extends ItemView {
 			if (checked) {
 				const markerSpan = indicator.createSpan({
 					text: source.markerSymbol || '✓',
-					cls: 'parallel-notes-source-marker',
+					cls: 'co-notes-source-marker',
 				});
 				markerSpan.style.color = getContrastColor(source.color);
 			}
@@ -436,12 +436,12 @@ export class CalendarView extends ItemView {
 		const today = new Date();
 
 		// ── Header ────────────────────────────────────────────────────────────
-		const header = container.createDiv('parallel-notes-calendar-header');
+		const header = container.createDiv('co-notes-calendar-header');
 
-		const leftControls = header.createDiv('parallel-notes-header-left');
-		const yearNavGroup = leftControls.createDiv('parallel-notes-nav-group');
-		const prevBtn = yearNavGroup.createEl('button', { cls: 'parallel-notes-nav-btn parallel-notes-caret-btn', text: '▲' });
-		const nextBtn = yearNavGroup.createEl('button', { cls: 'parallel-notes-nav-btn parallel-notes-caret-btn', text: '▼' });
+		const leftControls = header.createDiv('co-notes-header-left');
+		const yearNavGroup = leftControls.createDiv('co-notes-nav-group');
+		const prevBtn = yearNavGroup.createEl('button', { cls: 'co-notes-nav-btn co-notes-caret-btn', text: '▲' });
+		const nextBtn = yearNavGroup.createEl('button', { cls: 'co-notes-nav-btn co-notes-caret-btn', text: '▼' });
 
 		prevBtn.addEventListener('click', () => {
 			this.currentYear--;
@@ -453,13 +453,13 @@ export class CalendarView extends ItemView {
 		});
 
 		header.createSpan({
-			cls: 'parallel-notes-month-title',
+			cls: 'co-notes-month-title',
 			text: String(this.currentYear),
 		});
 
-		const rightControls = header.createDiv('parallel-notes-header-right');
+		const rightControls = header.createDiv('co-notes-header-right');
 		const monthBtn = rightControls.createEl('button', {
-			cls: 'parallel-notes-today-btn',
+			cls: 'co-notes-today-btn',
 			text: tr('calendar.monthView'),
 		});
 		monthBtn.addEventListener('click', () => {
@@ -468,7 +468,7 @@ export class CalendarView extends ItemView {
 		});
 
 		const todayBtn = rightControls.createEl('button', {
-			cls: 'parallel-notes-nav-btn parallel-notes-today-icon-btn',
+			cls: 'co-notes-nav-btn co-notes-today-icon-btn',
 			attr: { 'aria-label': tr('calendar.today'), title: tr('calendar.today') },
 		});
 		setIcon(todayBtn, 'rotate-ccw');
@@ -481,7 +481,7 @@ export class CalendarView extends ItemView {
 		});
 
 		// ── Month grid ────────────────────────────────────────────────────────
-		const grid = container.createDiv('parallel-notes-year-grid');
+		const grid = container.createDiv('co-notes-year-grid');
 		const monthLabels = getMonthLabels(language);
 		const monthlySource = config.monthlySource;
 
@@ -491,21 +491,21 @@ export class CalendarView extends ItemView {
 				today.getFullYear() === this.currentYear && today.getMonth() === m;
 
 			const cell = grid.createDiv(
-				'parallel-notes-month-cell' + (isCurrentMonth ? ' parallel-notes-current-month' : ''),
+				'co-notes-month-cell' + (isCurrentMonth ? ' co-notes-current-month' : ''),
 			);
 			cell.createDiv({
 				text: monthLabels[m] ?? String(m + 1),
-				cls: 'parallel-notes-month-name',
+				cls: 'co-notes-month-name',
 			});
 
 			// Daily-note count bar chart: one bar per source
 			if (config.sources.length > 0) {
 				const daysInMonth = new Date(this.currentYear, m + 1, 0).getDate();
-				const chart = cell.createDiv('parallel-notes-month-chart');
+				const chart = cell.createDiv('co-notes-month-chart');
 				for (const source of config.sources) {
 					const count = this.countNotesInMonth(source, this.currentYear, m);
 					const ratio = daysInMonth > 0 ? count / daysInMonth : 0;
-					const bar = chart.createDiv('parallel-notes-month-chart-bar');
+					const bar = chart.createDiv('co-notes-month-chart-bar');
 					bar.style.height = count > 0 ? `${Math.max(ratio * 100, 5)}%` : '0%';
 					if (count > 0) {
 						bar.style.backgroundColor = source.color;
@@ -521,7 +521,7 @@ export class CalendarView extends ItemView {
 				const isActive = activeFilePath !== null && activeFilePath === filePath;
 
 				const indicator = cell.createDiv({
-					cls: `parallel-notes-monthly-indicator ${exists ? 'exists' : 'missing'}${isActive ? ' active' : ''}`,
+					cls: `co-notes-monthly-indicator ${exists ? 'exists' : 'missing'}${isActive ? ' active' : ''}`,
 				});
 				if (exists) {
 					indicator.style.backgroundColor = monthlySource.color;
@@ -532,7 +532,7 @@ export class CalendarView extends ItemView {
 					if (checked) {
 						const markerSpan = indicator.createSpan({
 							text: monthlySource.markerSymbol || '✓',
-							cls: 'parallel-notes-source-marker',
+							cls: 'co-notes-source-marker',
 						});
 						markerSpan.style.color = getContrastColor(monthlySource.color);
 					}
@@ -606,13 +606,13 @@ export class CalendarView extends ItemView {
 }
 
 class ConfirmCreateNoteModal extends Modal {
-	private readonly plugin: ParallelNotesPlugin;
+	private readonly plugin: CoNotesPlugin;
 	private readonly filePath: string;
 	private readonly onSubmit: (confirmed: boolean) => void;
 
 	constructor(
 		app: App,
-		plugin: ParallelNotesPlugin,
+		plugin: CoNotesPlugin,
 		filePath: string,
 		onSubmit: (confirmed: boolean) => void,
 	) {
@@ -654,7 +654,7 @@ class ConfirmCreateNoteModal extends Modal {
 	}
 }
 
-function confirmCreateNote(app: App, plugin: ParallelNotesPlugin, filePath: string): Promise<boolean> {
+function confirmCreateNote(app: App, plugin: CoNotesPlugin, filePath: string): Promise<boolean> {
 	return new Promise((resolve) => {
 		let resolved = false;
 		const modal = new ConfirmCreateNoteModal(app, plugin, filePath, (confirmed) => {
@@ -733,10 +733,10 @@ function getSourceRowLengths(sourceCount: number): number[] {
 	return Array.from({ length: rows }, (_, index) => baseSize + (index >= rows - remainder ? 1 : 0));
 }
 
-function getSourceIndicatorHeight(plugin: ParallelNotesPlugin): number {
+function getSourceIndicatorHeight(plugin: CoNotesPlugin): number {
 	return normalizeSourceIndicatorHeight(plugin.settings.globalSourceIndicatorHeight);
 }
 
-function getDayCellMinHeight(plugin: ParallelNotesPlugin): number {
+function getDayCellMinHeight(plugin: CoNotesPlugin): number {
 	return normalizeDayCellMinHeight(plugin.settings.globalDayCellMinHeight);
 }

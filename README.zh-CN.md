@@ -1,8 +1,8 @@
-# Parallel Notes
+# Co Notes
 
 [English](./README.md) | [中文](./README.zh-CN.md)
 
-`Parallel Notes` 是一个 Obsidian 插件，用来在日历中可视化多个文件夹里的笔记。
+`Co Notes` 是一个 Obsidian 插件，用来在日历中可视化多个文件夹里的笔记。
 
 它不局限于单一的 Daily Note 目录。你可以定义多个笔记来源，把它们组合成不同的日历视图，并一眼看出每天哪些笔记已经存在。点击某个来源格子时，如果笔记已存在就直接打开；如果不存在，就可以创建并打开。
 
@@ -27,7 +27,7 @@
 - 颜色
 - 路径模板
 
-对于日历中的每一天，Parallel Notes 都会检查每个来源对应的笔记是否存在。如果存在，来源指示格会显示为配置的颜色；如果不存在，则保持空白。点击该格子即可打开或创建对应笔记。
+对于日历中的每一天，Co Notes 都会检查每个来源对应的笔记是否存在。如果存在，来源指示格会显示为配置的颜色；如果不存在，则保持空白。点击该格子即可打开或创建对应笔记。
 
 ## 使用场景示例
 
@@ -46,11 +46,11 @@
 - `work-log/{YYYY}/{YYYY-MM-DD}`
 - `journal/{YYYY}/{MM}/{YYYY-MM-DD}_{ddd}`
 
-花括号外的普通路径文本会原样保留，因此 `business/{YYYY-MM-DD}` 中的 `ss` 不会被误解析为秒数。如果路径末尾没有 `.md`，Parallel Notes 会自动补上。
+花括号外的普通路径文本会原样保留，因此 `business/{YYYY-MM-DD}` 中的 `ss` 不会被误解析为秒数。如果路径末尾没有 `.md`，Co Notes 会自动补上。
 
 ## 使用方法
 
-1. 打开 **设置 -> 第三方插件 -> Parallel Notes**。
+1. 打开 **设置 -> 第三方插件 -> Co Notes**。
 2. 创建或编辑一个日历视图。
 3. 为该视图添加一个或多个笔记来源。
 4. 为每个来源设置路径模板。
@@ -59,7 +59,7 @@
 
 ## 设置项
 
-Parallel Notes 当前支持：
+Co Notes 当前支持：
 
 - 插件界面语言：跟随系统、中文、英文
 - 创建缺失笔记前是否确认
@@ -70,7 +70,7 @@ Parallel Notes 当前支持：
 
 ## 命令
 
-Parallel Notes 会为每个日历视图注册一条命令：
+Co Notes 会为每个日历视图注册一条命令：
 
 - `打开日历：<视图名称>`
 
@@ -105,7 +105,7 @@ npm run lint
 将发布文件复制到：
 
 ```text
-<your-vault>/.obsidian/plugins/parallel-notes/
+<your-vault>/.obsidian/plugins/co-notes/
 ```
 
 必需文件：
@@ -114,7 +114,7 @@ npm run lint
 - `manifest.json`
 - `styles.css`
 
-然后重新加载 Obsidian，并在 **设置 -> 第三方插件** 中启用 **Parallel Notes**。
+然后重新加载 Obsidian，并在 **设置 -> 第三方插件** 中启用 **Co Notes**。
 
 ## 发布说明
 

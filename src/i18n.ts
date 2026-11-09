@@ -1,5 +1,5 @@
 import { getLanguage } from 'obsidian';
-import type { ParallelNotesLanguage } from './types';
+import type { CoNotesLanguage } from './types';
 
 export type ResolvedLanguage = 'zh-CN' | 'en';
 
@@ -62,7 +62,7 @@ type TranslationKey =
 
 const translations: Record<ResolvedLanguage, Record<TranslationKey, string>> = {
 	'zh-CN': {
-		'main.ribbonTooltip': 'Parallel Notes 日历',
+		'main.ribbonTooltip': 'Co Notes 日历',
 		'main.openCalendarCommand': '打开日历：{{name}}',
 		'main.goToPreviousNote': '跳转到上一篇日历笔记',
 		'main.goToNextNote': '跳转到下一篇日历笔记',
@@ -122,7 +122,7 @@ const translations: Record<ResolvedLanguage, Record<TranslationKey, string>> = {
 		'settings.monthlySourceHint': '在年历视图中显示，路径模板可用 {YYYY}、{MM}。',
 	},
 	en: {
-		'main.ribbonTooltip': 'Parallel Notes calendar',
+		'main.ribbonTooltip': 'Co Notes calendar',
 		'main.openCalendarCommand': 'Open calendar: {{name}}',
 		'main.goToPreviousNote': 'Go to previous calendar note',
 		'main.goToNextNote': 'Go to next calendar note',
@@ -195,7 +195,7 @@ const MONTH_LABELS: Record<ResolvedLanguage, string[]> = {
 	en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
 };
 
-export function resolveLanguage(language: ParallelNotesLanguage): ResolvedLanguage {
+export function resolveLanguage(language: CoNotesLanguage): ResolvedLanguage {
 	if (language === 'zh-CN' || language === 'en') {
 		return language;
 	}
