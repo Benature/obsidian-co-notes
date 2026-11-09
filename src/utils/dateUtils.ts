@@ -1,7 +1,8 @@
 import { moment } from 'obsidian';
 
-interface MomentDateFormatter {
+interface MomentDate {
 	format(template: string): string;
+	isoWeek(): number;
 }
 
 /**
@@ -9,7 +10,7 @@ interface MomentDateFormatter {
  * Square-bracket literals remain supported for compatibility.
  */
 export function formatPath(template: string, date: Date): string {
-	const formattedDate = moment(date) as MomentDateFormatter;
+	const formattedDate = moment(date) as MomentDate;
 	let result = '';
 	let index = 0;
 
@@ -45,7 +46,7 @@ export function getFilePath(template: string, date: Date): string {
 
 /** ISO week number (1-53), consistent with moment's WW format token. */
 export function getIsoWeekNumber(date: Date): number {
-	return moment(date).isoWeek();
+	return (moment(date) as MomentDate).isoWeek();
 }
 
 export function isSameDay(a: Date, b: Date): boolean {
