@@ -26,6 +26,10 @@ Keeping them together would blur which parts came from me and which came from AI
 
 Co Notes does not generate AI content or decide which record is more valuable. It keeps each note's source and authorship clear while letting the two timelines appear side by side.
 
+<p align="center">
+  <img src="./docs/images/co-notes-calendar.png" alt="Co Notes calendar showing Human, Agent, and Lark note sources" width="80%" />
+</p>
+
 ## How it works
 
 Each calendar view contains one or more note sources.

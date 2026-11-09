@@ -26,6 +26,10 @@
 
 Co Notes 不负责生成 AI 内容，也不判断哪份记录更有价值。它只做一件事：让每份笔记的来源和作者边界保持清晰，同时让两条时间线能够在日历上并肩呈现。
 
+<p align="center">
+  <img src="./docs/images/co-notes-calendar.png" alt="Co Notes 日历中的 Human、Agent 和 Lark 笔记来源" width="80%" />
+</p>
+
 ## 工作方式
 
 每个日历视图都包含一个或多个笔记来源。
