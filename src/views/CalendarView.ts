@@ -17,6 +17,7 @@ import {
 	normalizeSourceIndicatorHeight,
 } from '../types';
 import { getFilePath, getIsoWeekNumber, isSameDay } from '../utils/dateUtils';
+import { addActionHandlers } from '../utils/actionEvents';
 
 export const CALENDAR_VIEW_TYPE = 'co-notes-calendar';
 
@@ -71,23 +72,6 @@ export class CalendarView extends ItemView {
 	}
 
 	async onOpen(): Promise<void> {
-		// Use pointerdown instead of click: Obsidian consumes the first click
-		// when it activates an unfocused view, so click would require two clicks.
-		// Event delegation also survives re-renders that replace the buttons.
-		this.contentEl.addEventListener('pointerdown', (e: PointerEvent) => {
-			const target = e.target as HTMLElement | null;
-			if (!target) {
-				return;
-			}
-			if (target.closest('.co-notes-prev-note-btn')) {
-				e.preventDefault();
-				void this.plugin.navigateToAdjacentNote('prev');
-			} else if (target.closest('.co-notes-next-note-btn')) {
-				e.preventDefault();
-				void this.plugin.navigateToAdjacentNote('next');
-			}
-		});
-
 		this.registerEvent(
 			this.app.workspace.on('active-leaf-change', () => {
 				this.render();
@@ -199,21 +183,27 @@ export class CalendarView extends ItemView {
 			text: tr('calendar.yearView'),
 			attr: { title: tr('calendar.yearView') },
 		});
-		yearBtn.addEventListener('click', () => {
+		addActionHandlers(yearBtn, () => {
 			this.viewMode = 'year';
 			this.render();
 		});
 
 		const noteNavGroup = rightControls.createDiv('co-notes-nav-group');
-		noteNavGroup.createEl('button', {
+		const prevNoteBtn = noteNavGroup.createEl('button', {
 			cls: 'co-notes-nav-btn co-notes-note-nav-btn co-notes-prev-note-btn',
 			text: '←',
 			attr: { 'aria-label': tr('calendar.previousNote'), title: tr('calendar.previousNote') },
 		});
-		noteNavGroup.createEl('button', {
+		const nextNoteBtn = noteNavGroup.createEl('button', {
 			cls: 'co-notes-nav-btn co-notes-note-nav-btn co-notes-next-note-btn',
 			text: '→',
 			attr: { 'aria-label': tr('calendar.nextNote'), title: tr('calendar.nextNote') },
+		});
+		addActionHandlers(prevNoteBtn, () => {
+			void this.plugin.navigateToAdjacentNote('prev');
+		});
+		addActionHandlers(nextNoteBtn, () => {
+			void this.plugin.navigateToAdjacentNote('next');
 		});
 
 		const todayBtn = rightControls.createEl('button', {
@@ -222,7 +212,7 @@ export class CalendarView extends ItemView {
 		});
 		setIcon(todayBtn, 'rotate-ccw');
 
-		prevBtn.addEventListener('click', () => {
+		addActionHandlers(prevBtn, () => {
 			if (this.currentMonth === 0) {
 				this.currentMonth = 11;
 				this.currentYear--;
@@ -232,7 +222,7 @@ export class CalendarView extends ItemView {
 			this.render();
 		});
 
-		nextBtn.addEventListener('click', () => {
+		addActionHandlers(nextBtn, () => {
 			if (this.currentMonth === 11) {
 				this.currentMonth = 0;
 				this.currentYear++;
@@ -242,7 +232,7 @@ export class CalendarView extends ItemView {
 			this.render();
 		});
 
-		todayBtn.addEventListener('click', () => {
+		addActionHandlers(todayBtn, () => {
 			const now = new Date();
 			this.currentYear = now.getFullYear();
 			this.currentMonth = now.getMonth();
@@ -357,8 +347,7 @@ export class CalendarView extends ItemView {
 
 							indicator.title = `${source.name}${exists ? '' : tr('calendar.missingNoteSuffix')}`;
 
-							indicator.addEventListener('click', (e: MouseEvent) => {
-								e.stopPropagation();
+							addActionHandlers(indicator, () => {
 								void this.openOrCreateNote(filePath);
 							});
 						}
@@ -424,7 +413,7 @@ export class CalendarView extends ItemView {
 		}
 
 		cell.title = `${source.name}${exists ? '' : tr('calendar.missingNoteSuffix')}`;
-		cell.addEventListener('click', () => {
+		addActionHandlers(cell, () => {
 			void this.openOrCreateNote(filePath);
 		});
 	}
@@ -443,11 +432,11 @@ export class CalendarView extends ItemView {
 		const prevBtn = yearNavGroup.createEl('button', { cls: 'co-notes-nav-btn co-notes-caret-btn', text: '▲' });
 		const nextBtn = yearNavGroup.createEl('button', { cls: 'co-notes-nav-btn co-notes-caret-btn', text: '▼' });
 
-		prevBtn.addEventListener('click', () => {
+		addActionHandlers(prevBtn, () => {
 			this.currentYear--;
 			this.render();
 		});
-		nextBtn.addEventListener('click', () => {
+		addActionHandlers(nextBtn, () => {
 			this.currentYear++;
 			this.render();
 		});
@@ -462,7 +451,7 @@ export class CalendarView extends ItemView {
 			cls: 'co-notes-today-btn',
 			text: tr('calendar.monthView'),
 		});
-		monthBtn.addEventListener('click', () => {
+		addActionHandlers(monthBtn, () => {
 			this.viewMode = 'month';
 			this.render();
 		});
@@ -472,7 +461,7 @@ export class CalendarView extends ItemView {
 			attr: { 'aria-label': tr('calendar.today'), title: tr('calendar.today') },
 		});
 		setIcon(todayBtn, 'rotate-ccw');
-		todayBtn.addEventListener('click', () => {
+		addActionHandlers(todayBtn, () => {
 			const now = new Date();
 			this.currentYear = now.getFullYear();
 			this.currentMonth = now.getMonth();
@@ -546,15 +535,14 @@ export class CalendarView extends ItemView {
 
 				// Clicking the monthly-note indicator opens/creates the monthly note
 				indicator.title = `${monthlySource.name}${exists ? '' : tr('calendar.missingNoteSuffix')}`;
-				indicator.addEventListener('click', (e: MouseEvent) => {
-					e.stopPropagation();
+				addActionHandlers(indicator, () => {
 					void this.openOrCreateNote(filePath);
 				});
 			}
 
 			// Clicking anywhere else on the month cell jumps to that month view
 			cell.title = monthLabels[m] ?? String(m + 1);
-			cell.addEventListener('click', () => {
+			addActionHandlers(cell, () => {
 				this.currentMonth = m;
 				this.viewMode = 'month';
 				this.render();
