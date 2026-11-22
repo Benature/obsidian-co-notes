@@ -3,7 +3,13 @@ import type { CoNotesSettings, CalendarViewConfig, NoteSource } from './types';
 import { DEFAULT_SETTINGS, CoNotesSettingTab } from './settings';
 import { CALENDAR_VIEW_TYPE, CalendarView } from './views/CalendarView';
 import { resolveLanguage, t, type ResolvedLanguage } from './i18n';
-import { extractDateFromPath, getFilePath } from './utils/dateUtils';
+import {
+	extractDateFromPath,
+	extractMonthlyDateFromPath,
+	extractWeeklyDateFromPath,
+	getFilePath,
+} from './utils/dateUtils';
+import { HolidayService, isHolidayCountry } from './utils/holidays';
 import {
 	DEFAULT_DAY_CELL_MIN_HEIGHT,
 	DEFAULT_SOURCE_INDICATOR_HEIGHT,
@@ -13,10 +19,15 @@ import {
 
 export default class CoNotesPlugin extends Plugin {
 	settings: CoNotesSettings;
+	holidays: HolidayService;
 	lastActiveFilePath: string | null = null;
 
 	async onload(): Promise<void> {
 		await this.loadSettings();
+		this.holidays = new HolidayService(
+			() => this.settings.holidayCountry,
+			() => this.refreshAllCalendarViews(),
+		);
 
 		this.lastActiveFilePath = this.app.workspace.getActiveFile()?.path ?? null;
 
@@ -128,25 +139,39 @@ export default class CoNotesPlugin extends Plugin {
 		}
 
 		const activeFilePath = activeFile.path;
-		const date = extractDateFromPath(activeFilePath);
-		if (!date) {
+		const dailyDate = extractDateFromPath(activeFilePath);
+		const weeklyDate = dailyDate ? null : extractWeeklyDateFromPath(activeFilePath);
+		const monthlyDate = dailyDate || weeklyDate ? null : extractMonthlyDateFromPath(activeFilePath);
+		const date = dailyDate ?? weeklyDate ?? monthlyDate;
+		const period = dailyDate ? 'day' : weeklyDate ? 'week' : monthlyDate ? 'month' : null;
+		if (!date || !period) {
 			new Notice(this.t('main.cannotParseDate'));
 			return;
 		}
 
-		// Find the source that matches the current active note
+		// Match the active note against sources of the same period.
 		for (const config of this.settings.calendarViews) {
-			for (const source of config.sources) {
+			const sources =
+				period === 'day'
+					? config.sources
+					: period === 'week'
+						? (config.weeklySources ?? [])
+						: (config.monthlySources ?? []);
+			for (const source of sources) {
 				if (getFilePath(source.pathTemplate, date) !== activeFilePath) {
 					continue;
 				}
 
 				const step = direction === 'prev' ? -1 : 1;
 				const currentDate = new Date(date);
+				const maxSteps = period === 'day' ? 365 : period === 'week' ? 520 : 120;
 
-				// Search up to 365 days in the given direction
-				for (let i = 0; i < 365; i++) {
-					currentDate.setDate(currentDate.getDate() + step);
+				for (let i = 0; i < maxSteps; i++) {
+					if (period === 'month') {
+						currentDate.setMonth(currentDate.getMonth() + step);
+					} else {
+						currentDate.setDate(currentDate.getDate() + step * (period === 'week' ? 7 : 1));
+					}
 					const filePath = getFilePath(source.pathTemplate, currentDate);
 					const file = this.app.vault.getAbstractFileByPath(filePath);
 					if (file instanceof TFile) {
@@ -196,6 +221,8 @@ export default class CoNotesPlugin extends Plugin {
 			...migratedHeights,
 			...(saved ?? {}),
 			calendarViews: migratedViews ?? DEFAULT_SETTINGS.calendarViews,
+			highlightWeekends: saved?.highlightWeekends !== false,
+			holidayCountry: isHolidayCountry(saved?.holidayCountry) ? saved.holidayCountry : '',
 			weekStart: saved?.weekStart === 'sunday' ? 'sunday' : 'monday',
 			globalSourceIndicatorHeight: normalizeSourceIndicatorHeight(
 				saved?.globalSourceIndicatorHeight ?? migratedHeights.globalSourceIndicatorHeight,

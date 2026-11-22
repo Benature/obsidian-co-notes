@@ -41,6 +41,16 @@ export function parseSettingsImport(contents: string): CoNotesSettings {
 	if (typeof record.confirmBeforeCreate !== 'boolean') {
 		throw new Error('Invalid create-note confirmation setting');
 	}
+	if (record.highlightWeekends !== undefined && typeof record.highlightWeekends !== 'boolean') {
+		throw new Error('Invalid weekend highlighting setting');
+	}
+	if (
+		record.holidayCountry !== undefined &&
+		(typeof record.holidayCountry !== 'string' ||
+			(record.holidayCountry !== '' && !/^[A-Z]{2}$/.test(record.holidayCountry)))
+	) {
+		throw new Error('Invalid holiday country setting');
+	}
 	if (!Array.isArray(record.calendarViews)) {
 		throw new Error('Invalid calendar views');
 	}
@@ -53,6 +63,8 @@ export function parseSettingsImport(contents: string): CoNotesSettings {
 		globalDayCellMinHeight: normalizeDayCellMinHeight(
 			expectNumber(record, 'globalDayCellMinHeight'),
 		),
+		highlightWeekends: record.highlightWeekends ?? true,
+		holidayCountry: record.holidayCountry ?? '',
 		language,
 		weekStart,
 		calendarViews: record.calendarViews.map(parseCalendarView),

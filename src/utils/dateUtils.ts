@@ -82,6 +82,51 @@ export function isSameDay(a: Date, b: Date): boolean {
 	);
 }
 
+export type CalendarDayType = 'workday' | 'weekend' | 'holiday';
+
+/** Centralized classification allows holiday and adjusted-workday calendars later. */
+export function getCalendarDayType(date: Date): CalendarDayType {
+	const weekday = date.getDay();
+	return weekday === 0 || weekday === 6 ? 'weekend' : 'workday';
+}
+
+/** Extract the Thursday of an ISO week from paths such as 2026-W47 or 2026/W47. */
+export function extractWeeklyDateFromPath(filePath: string): Date | null {
+	const match = filePath.match(/(\d{4})[-/]?W(\d{1,2})(?!\d)/i);
+	if (!match) {
+		return null;
+	}
+
+	const year = parseInt(match[1]!, 10);
+	const week = parseInt(match[2]!, 10);
+	if (week < 1 || week > 53) {
+		return null;
+	}
+
+	// ISO week 1 is the week containing January 4; Thursday identifies the week-year.
+	const january4 = new Date(year, 0, 4);
+	const mondayOfWeek1 = new Date(year, 0, 4 - ((january4.getDay() + 6) % 7));
+	return new Date(
+		mondayOfWeek1.getFullYear(),
+		mondayOfWeek1.getMonth(),
+		mondayOfWeek1.getDate() + (week - 1) * 7 + 3,
+	);
+}
+
+/** Extract the first day of a month from paths such as 2026-11 or 2026/11. */
+export function extractMonthlyDateFromPath(filePath: string): Date | null {
+	const match = filePath.match(/(\d{4})([-/])(\d{1,2})(?!\d|[-/]\d)/);
+	if (!match) {
+		return null;
+	}
+
+	const month = parseInt(match[3]!, 10);
+	if (month < 1 || month > 12) {
+		return null;
+	}
+	return new Date(parseInt(match[1]!, 10), month - 1, 1);
+}
+
 /**
  * Try to extract a calendar date from a file path.
  * Supports common patterns like YYYY-MM-DD, YYYY/MM/DD, and YYYYMMDD.

@@ -22,6 +22,11 @@ type TranslationKey =
 	| 'settings.weekStart.desc'
 	| 'settings.weekStart.option.monday'
 	| 'settings.weekStart.option.sunday'
+	| 'settings.highlightWeekends.name'
+	| 'settings.highlightWeekends.desc'
+	| 'settings.holidayCountry.name'
+	| 'settings.holidayCountry.desc'
+	| 'settings.holidayCountry.option.none'
 	| 'settings.confirmBeforeCreate.name'
 	| 'settings.confirmBeforeCreate.desc'
 	| 'settings.sourceIndicatorHeight.name'
@@ -92,6 +97,11 @@ const translations: Record<ResolvedLanguage, Record<TranslationKey, string>> = {
 		'settings.weekStart.desc': '设置月历每行的起始星期；周数仍按 ISO 8601 计算。',
 		'settings.weekStart.option.monday': '周一',
 		'settings.weekStart.option.sunday': '周日',
+		'settings.highlightWeekends.name': '突出显示周末',
+		'settings.highlightWeekends.desc': '使用灰色背景和文字区分周末；关闭后与工作日一致。',
+		'settings.holidayCountry.name': '节假日国家/地区',
+		'settings.holidayCountry.desc': '在线获取并按年缓存公共假日；中国数据包含调休，失败时回退到普通周末规则。',
+		'settings.holidayCountry.option.none': '不启用',
 		'settings.confirmBeforeCreate.name': '创建笔记前确认',
 		'settings.confirmBeforeCreate.desc': '点击缺失笔记时，先确认是否创建。',
 		'settings.sourceIndicatorHeight.name': '来源格高度',
@@ -164,6 +174,11 @@ const translations: Record<ResolvedLanguage, Record<TranslationKey, string>> = {
 		'settings.weekStart.desc': 'Choose the first weekday of each month-calendar row. Week numbers still follow ISO 8601.',
 		'settings.weekStart.option.monday': 'Monday',
 		'settings.weekStart.option.sunday': 'Sunday',
+		'settings.highlightWeekends.name': 'Highlight weekends',
+		'settings.highlightWeekends.desc': 'Use gray backgrounds and text to distinguish weekends from workdays.',
+		'settings.holidayCountry.name': 'Holiday country/region',
+		'settings.holidayCountry.desc': 'Fetch and cache public holidays by year. China includes adjusted workdays; fall back to weekends when unavailable.',
+		'settings.holidayCountry.option.none': 'Disabled',
 		'settings.confirmBeforeCreate.name': 'Create note confirmation',
 		'settings.confirmBeforeCreate.desc':
 			'Ask for confirmation before creating a missing note.',

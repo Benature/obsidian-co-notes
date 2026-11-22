@@ -34,6 +34,8 @@ function createSettings() {
 		confirmBeforeCreate: false,
 		globalSourceIndicatorHeight: 10,
 		globalDayCellMinHeight: 48,
+		highlightWeekends: false,
+		holidayCountry: 'CN',
 		language: 'zh-CN',
 		weekStart: 'monday',
 		calendarViews: [
@@ -102,6 +104,20 @@ test('defaults missing week start to Monday for legacy settings', () => {
 	assert.equal(parseSettingsImport(JSON.stringify(legacy)).weekStart, 'monday');
 });
 
+test('defaults weekend highlighting to enabled for legacy settings', () => {
+	const legacy = createSettings();
+	delete legacy.highlightWeekends;
+
+	assert.equal(parseSettingsImport(JSON.stringify(legacy)).highlightWeekends, true);
+});
+
+test('defaults the holiday country to disabled for legacy settings', () => {
+	const legacy = createSettings();
+	delete legacy.holidayCountry;
+
+	assert.equal(parseSettingsImport(JSON.stringify(legacy)).holidayCountry, '');
+});
+
 test('round-trips Sunday as the configured week start', () => {
 	const settings = { ...createSettings(), weekStart: 'sunday' };
 	assert.equal(parseSettingsImport(JSON.stringify(settings)).weekStart, 'sunday');
@@ -145,6 +161,8 @@ test('rejects malformed or structurally invalid imports', () => {
 		JSON.stringify({ ...createSettings(), language: 'fr' }),
 		JSON.stringify({ ...createSettings(), weekStart: 'saturday' }),
 		JSON.stringify({ ...createSettings(), confirmBeforeCreate: 'yes' }),
+		JSON.stringify({ ...createSettings(), highlightWeekends: 'yes' }),
+		JSON.stringify({ ...createSettings(), holidayCountry: 'cn' }),
 		JSON.stringify({ ...createSettings(), calendarViews: {} }),
 		JSON.stringify({ ...createSettings(), globalDayCellMinHeight: '48' }),
 		JSON.stringify({

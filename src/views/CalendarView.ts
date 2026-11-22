@@ -18,6 +18,7 @@ import {
 	normalizeSourceIndicatorHeight,
 } from '../types';
 import {
+	getCalendarDayType,
 	getFilePath,
 	getIsoWeekNumber,
 	getIsoWeekReferenceDate,
@@ -141,6 +142,9 @@ export class CalendarView extends ItemView {
 		const tr = this.plugin.t.bind(this.plugin);
 		const activeFilePath = this.app.workspace.getActiveFile()?.path ?? null;
 		const weekStart = this.plugin.settings.weekStart;
+		this.plugin.holidays.ensureYear(this.currentYear);
+		if (this.currentMonth === 0) this.plugin.holidays.ensureYear(this.currentYear - 1);
+		if (this.currentMonth === 11) this.plugin.holidays.ensureYear(this.currentYear + 1);
 
 		// ── Header ────────────────────────────────────────────────────────────
 		const header = container.createDiv('co-notes-calendar-header');
@@ -263,8 +267,14 @@ export class CalendarView extends ItemView {
 			});
 		}
 		const dayNames = getWeekdayLabels(language, weekStart);
-		for (const name of dayNames) {
-			grid.createDiv({ text: name, cls: 'co-notes-day-header' });
+		for (const [index, name] of dayNames.entries()) {
+			const weekday = weekStart === 'monday' ? (index + 1) % 7 : index;
+			const isWeekend = weekday === 0 || weekday === 6;
+			const isHighlighted = isWeekend && this.plugin.settings.highlightWeekends;
+			grid.createDiv({
+				text: name,
+				cls: `co-notes-day-header${isWeekend ? ' co-notes-day-weekend' : ''}${isHighlighted ? ' co-notes-non-workday' : ''}`,
+			});
 		}
 
 		const firstDay = new Date(this.currentYear, this.currentMonth, 1);
@@ -306,13 +316,23 @@ export class CalendarView extends ItemView {
 				}
 
 				const isToday = isSameDay(date, today);
+				const holiday = this.plugin.holidays.getHoliday(date);
+				const dayType = holiday ? (holiday.isOffDay ? 'holiday' : 'workday') : getCalendarDayType(date);
 				let hasActiveNote = false;
 
 				const cell = grid.createDiv(
 					'co-notes-day-cell' +
+						` co-notes-day-${dayType}` +
+						(holiday && !holiday.isOffDay ? ' co-notes-day-adjusted-workday' : '') +
+						(dayType === 'holiday' ||
+						(dayType === 'weekend' && this.plugin.settings.highlightWeekends)
+							? ' co-notes-non-workday'
+							: '') +
 						(isToday ? ' co-notes-today' : '') +
 						(isOtherMonth ? ' co-notes-day-other-month' : ''),
 				);
+				cell.dataset.coNotesDayType = dayType;
+				if (holiday) cell.title = holiday.name;
 				cell.createDiv({ text: String(date.getDate()), cls: 'co-notes-day-number' });
 
 				if (config.sources.length > 0) {

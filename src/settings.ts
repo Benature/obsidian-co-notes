@@ -17,6 +17,7 @@ import {
 	normalizeSourceIndicatorHeight,
 } from './types';
 import { createSettingsExport, parseSettingsImport } from './utils/settingsTransfer';
+import { HOLIDAY_COUNTRY_OPTIONS, isHolidayCountry } from './utils/holidays';
 
 export type { CoNotesSettings };
 
@@ -26,6 +27,8 @@ export const DEFAULT_SETTINGS: CoNotesSettings = {
 	confirmBeforeCreate: true,
 	globalSourceIndicatorHeight: DEFAULT_SOURCE_INDICATOR_HEIGHT,
 	globalDayCellMinHeight: DEFAULT_DAY_CELL_MIN_HEIGHT,
+	highlightWeekends: true,
+	holidayCountry: '',
 	language: 'system',
 	weekStart: 'monday',
 	calendarViews: [
@@ -86,6 +89,23 @@ export class CoNotesSettingTab extends PluginSettingTab {
 					options: {
 						monday: tr('settings.weekStart.option.monday'),
 						sunday: tr('settings.weekStart.option.sunday'),
+					},
+				},
+			},
+			{
+				name: tr('settings.highlightWeekends.name'),
+				desc: tr('settings.highlightWeekends.desc'),
+				control: { type: 'toggle', key: 'highlightWeekends' },
+			},
+			{
+				name: tr('settings.holidayCountry.name'),
+				desc: tr('settings.holidayCountry.desc'),
+				control: {
+					type: 'dropdown',
+					key: 'holidayCountry',
+					options: {
+						'': tr('settings.holidayCountry.option.none'),
+						...HOLIDAY_COUNTRY_OPTIONS,
 					},
 				},
 			},
@@ -168,6 +188,14 @@ export class CoNotesSettingTab extends PluginSettingTab {
 			case 'weekStart':
 				if (value === 'monday' || value === 'sunday') {
 					this.plugin.settings.weekStart = value;
+				}
+				break;
+			case 'highlightWeekends':
+				this.plugin.settings.highlightWeekends = value === true;
+				break;
+			case 'holidayCountry':
+				if (isHolidayCountry(value)) {
+					this.plugin.settings.holidayCountry = value;
 				}
 				break;
 			case 'confirmBeforeCreate':

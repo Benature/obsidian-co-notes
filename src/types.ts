@@ -27,6 +27,9 @@ export interface CoNotesSettings {
 	confirmBeforeCreate: boolean;
 	globalSourceIndicatorHeight: number;
 	globalDayCellMinHeight: number;
+	highlightWeekends: boolean;
+	/** ISO 3166-1 alpha-2 country code; empty disables online holidays. */
+	holidayCountry: string;
 	language: CoNotesLanguage;
 	weekStart: CoNotesWeekStart;
 }

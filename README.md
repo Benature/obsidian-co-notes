@@ -75,12 +75,16 @@ Co Notes keeps normal path text outside braces as-is, so the `ss` in `business/{
 Co Notes currently supports:
 
 - Plugin UI language: system, Chinese, or English
+- Optional gray weekend highlighting (enabled by default)
+- Holiday country/region (disabled by default)
 - Confirm before creating a missing note
 - Global source indicator height
 - Global day cell minimum height
 - Multiple calendar views
 - Multiple note sources per calendar view
 - JSON settings export and import
+
+When holidays are enabled, Co Notes fetches and caches them by year. China uses [holiday-cn](https://github.com/NateScarlet/holiday-cn), including public holidays and adjusted workdays. Other countries use nationwide public holidays from [Nager.Date](https://date.nager.at/). Failed requests fall back to regular weekend rules without affecting calendar or note features.
 
 ## Commands
 

@@ -404,6 +404,11 @@
 	padding: 4px 0 6px;
 }
 
+.co-notes-day-header.co-notes-non-workday {
+	color: var(--text-muted);
+	opacity: 0.8;
+}
+
 .co-notes-day-cell {
 	display: flex;
 	flex-direction: column;
@@ -411,6 +416,26 @@
 	overflow: hidden;
 	background: var(--background-secondary);
 	min-height: var(--co-notes-day-cell-min-height, 44px);
+}
+
+/* Holidays can reuse .co-notes-non-workday with a different accent later. */
+.co-notes-day-cell.co-notes-non-workday {
+	background: var(--background-modifier-border);
+	box-shadow: inset 0 0 0 1px var(--background-modifier-border-hover);
+}
+
+.co-notes-day-cell.co-notes-non-workday .co-notes-day-number {
+	color: var(--text-muted);
+	font-weight: 400;
+}
+
+.co-notes-day-cell.co-notes-day-holiday {
+	background: var(--background-modifier-hover);
+	box-shadow: inset 0 0 0 1px var(--color-orange);
+}
+
+.co-notes-day-cell.co-notes-day-holiday .co-notes-day-number {
+	color: var(--color-orange);
 }
 
 .co-notes-day-cell-active {
