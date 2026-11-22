@@ -11,10 +11,11 @@
 	display: flex;
 	flex-direction: column;
 	container-type: inline-size;
+	--co-notes-monthly-indicator-height: 18px;
 }
 
 .co-notes-year-mode {
-	overflow-y: hidden;
+	overflow-y: auto;
 }
 
 /* ── Header ─────────────────────────────────────────────────────────────── */
@@ -211,7 +212,7 @@
 	display: grid;
 	/* Narrow container: 3 columns x 4 rows */
 	grid-template-columns: repeat(3, 1fr);
-	grid-template-rows: repeat(4, minmax(0, 1fr));
+	grid-template-rows: repeat(4, minmax(min-content, 1fr));
 	gap: 8px;
 	margin-top: 8px;
 	flex: 1;
@@ -222,7 +223,7 @@
 @container (min-width: 620px) {
 	.co-notes-year-grid {
 		grid-template-columns: repeat(4, 1fr);
-		grid-template-rows: repeat(3, minmax(0, 1fr));
+		grid-template-rows: repeat(3, minmax(min-content, 1fr));
 	}
 }
 
@@ -231,7 +232,7 @@
 	flex-direction: column;
 	border-radius: 8px;
 	background: var(--background-secondary);
-	padding: 12px;
+	padding: 8px;
 	min-height: 0;
 	overflow: hidden;
 	cursor: pointer;
@@ -246,26 +247,36 @@
 	outline-offset: -2px;
 }
 
+.co-notes-month-name-row {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-bottom: 4px;
+}
+
 .co-notes-month-name {
 	font-size: 14px;
 	font-weight: 600;
 	color: var(--text-normal);
-	margin-bottom: 8px;
+	flex: 1;
+	min-width: 0;
 }
 
 .co-notes-monthly-indicator {
-	margin-top: auto;
-	height: var(--co-notes-source-indicator-min-height, 12px);
-	border-radius: 2px;
-	background-color: var(--background-modifier-border);
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	overflow: hidden;
+	cursor: pointer;
+	flex-shrink: 0;
 }
 
 .co-notes-monthly-indicator.missing {
-	opacity: 0.5;
+	/* No fill; the dashed outline alone marks a not-yet-created note. */
+	border: 1px dashed var(--text-faint);
 }
 
 .co-notes-monthly-indicator.active {
@@ -273,17 +284,13 @@
 	outline-offset: -1px;
 }
 
-.co-notes-monthly-indicator {
-	cursor: pointer;
-}
-
 .co-notes-month-chart {
 	display: flex;
 	align-items: stretch;
 	gap: 4px;
 	flex: 1;
-	min-height: 28px;
-	margin: 8px 0;
+	min-height: 12px;
+	margin: 4px 0;
 }
 
 .co-notes-month-chart-item {

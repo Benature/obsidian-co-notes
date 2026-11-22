@@ -482,10 +482,45 @@ export class CalendarView extends ItemView {
 			const cell = grid.createDiv(
 				'co-notes-month-cell' + (isCurrentMonth ? ' co-notes-current-month' : ''),
 			);
-			cell.createDiv({
+			// Month name + monthly-note indicator share one row
+			const nameRow = cell.createDiv('co-notes-month-name-row');
+			nameRow.createDiv({
 				text: monthLabels[m] ?? String(m + 1),
 				cls: 'co-notes-month-name',
 			});
+
+			if (monthlySource) {
+				const filePath = getFilePath(monthlySource.pathTemplate, monthDate);
+				const file = this.app.vault.getAbstractFileByPath(filePath);
+				const exists = file instanceof TFile;
+				const isActive = activeFilePath !== null && activeFilePath === filePath;
+
+				const indicator = nameRow.createDiv({
+					cls: `co-notes-monthly-indicator ${exists ? 'exists' : 'missing'}${isActive ? ' active' : ''}`,
+				});
+				// A small colored dot next to the month name; only fill with the
+				// source color when the note exists (missing shows a dashed outline).
+				if (exists) {
+					indicator.style.backgroundColor = monthlySource.color;
+				}
+
+				if (exists && monthlySource.checkboxProperty) {
+					const checked = isCheckboxChecked(this.app, file, monthlySource.checkboxProperty);
+					if (checked) {
+						const markerSpan = indicator.createSpan({
+							text: monthlySource.markerSymbol || '✓',
+							cls: 'co-notes-source-marker',
+						});
+						markerSpan.style.color = getContrastColor(monthlySource.color);
+					}
+				}
+
+				// Clicking the monthly-note indicator opens/creates the monthly note
+				indicator.title = `${monthlySource.name}${exists ? '' : tr('calendar.missingNoteSuffix')}`;
+				addActionHandlers(indicator, () => {
+					void this.openOrCreateNote(filePath);
+				});
+			}
 
 			// Daily-note count bar chart: one bar per source
 			if (config.sources.length > 0) {
@@ -507,37 +542,6 @@ export class CalendarView extends ItemView {
 					}
 					bar.title = `${source.name}: ${count}/${daysInMonth}`;
 				}
-			}
-
-			if (monthlySource) {
-				const filePath = getFilePath(monthlySource.pathTemplate, monthDate);
-				const file = this.app.vault.getAbstractFileByPath(filePath);
-				const exists = file instanceof TFile;
-				const isActive = activeFilePath !== null && activeFilePath === filePath;
-
-				const indicator = cell.createDiv({
-					cls: `co-notes-monthly-indicator ${exists ? 'exists' : 'missing'}${isActive ? ' active' : ''}`,
-				});
-				if (exists) {
-					indicator.style.backgroundColor = monthlySource.color;
-				}
-
-				if (exists && monthlySource.checkboxProperty) {
-					const checked = isCheckboxChecked(this.app, file, monthlySource.checkboxProperty);
-					if (checked) {
-						const markerSpan = indicator.createSpan({
-							text: monthlySource.markerSymbol || '✓',
-							cls: 'co-notes-source-marker',
-						});
-						markerSpan.style.color = getContrastColor(monthlySource.color);
-					}
-				}
-
-				// Clicking the monthly-note indicator opens/creates the monthly note
-				indicator.title = `${monthlySource.name}${exists ? '' : tr('calendar.missingNoteSuffix')}`;
-				addActionHandlers(indicator, () => {
-					void this.openOrCreateNote(filePath);
-				});
 			}
 
 			// Clicking anywhere else on the month cell jumps to that month view
