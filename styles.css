@@ -158,7 +158,7 @@
 }
 
 .co-notes-calendar-with-weekly {
-	grid-template-columns: repeat(var(--co-notes-weekly-columns, 1), minmax(34px, 0.35fr)) repeat(7, 1fr);
+	grid-template-columns: minmax(34px, 0.35fr) repeat(7, 1fr);
 }
 
 /* ── Weekly note column ─────────────────────────────────────────────────── */
@@ -173,10 +173,6 @@
 	cursor: pointer;
 }
 
-.co-notes-weekly-cell:hover {
-	background: var(--background-modifier-hover);
-}
-
 .co-notes-weekly-cell-active {
 	background: var(--background-modifier-hover);
 	box-shadow: inset 0 0 0 1px var(--color-accent);
@@ -189,10 +185,22 @@
 	text-align: center;
 }
 
-.co-notes-weekly-indicator {
+.co-notes-weekly-sources {
+	display: flex;
+	flex-direction: column;
+	align-self: stretch;
+	gap: 1px;
+	padding: 1px;
 	margin-top: auto;
-	margin-bottom: 3px;
-	width: 80%;
+}
+
+.co-notes-weekly-sources-row {
+	display: grid;
+	gap: 1px;
+}
+
+.co-notes-weekly-indicator {
+	cursor: pointer;
 	height: var(--co-notes-source-indicator-min-height, 12px);
 	border-radius: 2px;
 	background-color: var(--background-modifier-border);
@@ -204,6 +212,18 @@
 
 .co-notes-weekly-indicator.missing {
 	opacity: 0.5;
+}
+
+.co-notes-weekly-indicator:hover {
+	filter: brightness(1.2);
+	opacity: 1;
+}
+
+.co-notes-weekly-indicator.active {
+	outline: 2px solid var(--color-accent);
+	outline-offset: -1px;
+	box-shadow: 0 0 6px var(--color-accent);
+	z-index: 1;
 }
 
 /* ── Year view ──────────────────────────────────────────────────────────── */

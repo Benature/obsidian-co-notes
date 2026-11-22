@@ -253,17 +253,14 @@ export class CalendarView extends ItemView {
 		const hasWeekly = weeklySources.length > 0;
 		if (hasWeekly) {
 			grid.addClass('co-notes-calendar-with-weekly');
-			grid.style.setProperty('--co-notes-weekly-columns', String(weeklySources.length));
 		}
 
-		// Header row: optional weekly columns + 7 weekday columns
+		// Header row: one weekly column + 7 weekday columns
 		if (hasWeekly) {
-			for (let i = 0; i < weeklySources.length; i++) {
-				grid.createDiv({
-					text: tr('calendar.weekHeader'),
-					cls: 'co-notes-day-header co-notes-weekly-header',
-				});
-			}
+			grid.createDiv({
+				text: tr('calendar.weekHeader'),
+				cls: 'co-notes-day-header co-notes-weekly-header',
+			});
 		}
 		const dayNames = getWeekdayLabels(language, weekStart);
 		for (const name of dayNames) {
@@ -286,9 +283,7 @@ export class CalendarView extends ItemView {
 					1 - leadingEmptyCells + week * 7,
 				);
 				const weekReferenceDate = getIsoWeekReferenceDate(weekStartDate, weekStart);
-				for (const weeklySource of weeklySources) {
-					this.renderWeeklyCell(grid, weeklySource, weekReferenceDate, activeFilePath);
-				}
+				this.renderWeeklyCell(grid, weeklySources, weekReferenceDate, activeFilePath);
 			}
 
 			for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
@@ -394,48 +389,61 @@ export class CalendarView extends ItemView {
 
 	private renderWeeklyCell(
 		grid: HTMLElement,
-		source: NoteSource,
+		sources: NoteSource[],
 		weekReferenceDate: Date,
 		activeFilePath: string | null,
 	): void {
 		const tr = this.plugin.t.bind(this.plugin);
-		const filePath = getFilePath(source.pathTemplate, weekReferenceDate);
-		const file = this.app.vault.getAbstractFileByPath(filePath);
-		const exists = file instanceof TFile;
-		const isActive = activeFilePath !== null && activeFilePath === filePath;
-
 		const cell = grid.createDiv('co-notes-weekly-cell');
-		if (isActive) {
-			cell.addClass('co-notes-weekly-cell-active');
-		}
-
 		cell.createDiv({
 			text: `W${getIsoWeekNumber(weekReferenceDate)}`,
 			cls: 'co-notes-weekly-number',
 		});
 
-		const indicator = cell.createDiv({
-			cls: `co-notes-weekly-indicator ${exists ? 'exists' : 'missing'}`,
-		});
-		if (exists) {
-			indicator.style.backgroundColor = source.color;
-		}
+		const sourcesWrap = cell.createDiv('co-notes-weekly-sources');
+		let sourceIndex = 0;
+		for (const rowLength of getSourceRowLengths(sources.length)) {
+			const sourcesRow = sourcesWrap.createDiv('co-notes-weekly-sources-row');
+			sourcesRow.style.gridTemplateColumns = `repeat(${rowLength}, minmax(0, 1fr))`;
 
-		if (exists && source.checkboxProperty) {
-			const checked = isCheckboxChecked(this.app, file, source.checkboxProperty);
-			if (checked) {
-				const markerSpan = indicator.createSpan({
-					text: source.markerSymbol || '✓',
-					cls: 'co-notes-source-marker',
+			for (let i = 0; i < rowLength; i++) {
+				const source = sources[sourceIndex++];
+				if (!source) {
+					continue;
+				}
+
+				const filePath = getFilePath(source.pathTemplate, weekReferenceDate);
+				const file = this.app.vault.getAbstractFileByPath(filePath);
+				const exists = file instanceof TFile;
+				const isActive = activeFilePath !== null && activeFilePath === filePath;
+				if (isActive) {
+					cell.addClass('co-notes-weekly-cell-active');
+				}
+
+				const indicator = sourcesRow.createDiv({
+					cls: `co-notes-weekly-indicator ${exists ? 'exists' : 'missing'}${isActive ? ' active' : ''}`,
 				});
-				markerSpan.style.color = getContrastColor(source.color);
+				if (exists) {
+					indicator.style.backgroundColor = source.color;
+				}
+
+				if (exists && source.checkboxProperty) {
+					const checked = isCheckboxChecked(this.app, file, source.checkboxProperty);
+					if (checked) {
+						const markerSpan = indicator.createSpan({
+							text: source.markerSymbol || '✓',
+							cls: 'co-notes-source-marker',
+						});
+						markerSpan.style.color = getContrastColor(source.color);
+					}
+				}
+
+				indicator.title = `${source.name}${exists ? '' : tr('calendar.missingNoteSuffix')}`;
+				addActionHandlers(indicator, () => {
+					void this.openOrCreateNote(filePath);
+				});
 			}
 		}
-
-		cell.title = `${source.name}${exists ? '' : tr('calendar.missingNoteSuffix')}`;
-		addActionHandlers(cell, () => {
-			void this.openOrCreateNote(filePath);
-		});
 	}
 
 	private renderYearCalendar(container: HTMLElement, config: CalendarViewConfig): void {
