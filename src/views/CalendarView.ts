@@ -399,7 +399,12 @@ export class CalendarView extends ItemView {
 			return;
 		}
 		const legend = container.createDiv('co-notes-legend');
+		const uniqueSources = new Map<string, NoteSource>();
 		for (const source of sources) {
+			const key = source.categoryId ?? `${source.name}\0${source.color}`;
+			if (!uniqueSources.has(key)) uniqueSources.set(key, source);
+		}
+		for (const source of uniqueSources.values()) {
 			const item = legend.createDiv('co-notes-legend-item');
 			const dot = item.createDiv('co-notes-legend-dot');
 			dot.style.backgroundColor = source.color;
