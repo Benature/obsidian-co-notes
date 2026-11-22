@@ -1,10 +1,11 @@
-import { App, Notice, PluginSettingTab, type SettingDefinitionItem } from 'obsidian';
+import { App, Notice, PluginSettingTab, setIcon, type SettingDefinitionItem } from 'obsidian';
 import type CoNotesPlugin from './main';
 import { resolveLanguage, t } from './i18n';
 import {
 	CoNotesSettings,
 	CalendarViewConfig,
 	NoteSource,
+	NoteCategory,
 	DEFAULT_COLORS,
 	DEFAULT_DAY_CELL_MIN_HEIGHT,
 	DEFAULT_SOURCE_INDICATOR_HEIGHT,
@@ -18,6 +19,13 @@ import {
 } from './types';
 import { createSettingsExport, parseSettingsImport } from './utils/settingsTransfer';
 import { HOLIDAY_COUNTRY_OPTIONS, isHolidayCountry } from './utils/holidays';
+import {
+	getPeriodSources,
+	normalizeSourceCategories,
+	reorderSourcesByCategory,
+	type SourcePeriodKey,
+} from './utils/sourceCategories';
+import { SourceConfigModal } from './views/SourceConfigModal';
 
 export type { CoNotesSettings };
 
@@ -35,15 +43,21 @@ export const DEFAULT_SETTINGS: CoNotesSettings = {
 		{
 			id: generateId(),
 			name: 'Daily notes',
+			categories: [
+				{ id: 'category-a', name: 'A diary', color: DEFAULT_COLORS[0] ?? '#4a9eff' },
+				{ id: 'category-b', name: 'B diary', color: DEFAULT_COLORS[1] ?? '#ff6b6b' },
+			],
 			sources: [
 				{
 					id: generateId(),
+					categoryId: 'category-a',
 					name: 'A diary',
 					pathTemplate: 'daily/{YYYY}/{MM}/{YYYY-MM-DD}',
 					color: DEFAULT_COLORS[0] ?? '#4a9eff',
 				},
 				{
 					id: generateId(),
+					categoryId: 'category-b',
 					name: 'B diary',
 					pathTemplate: 'daily-b/{YYYY}/{MM}/{YYYY-MM-DD}',
 					color: DEFAULT_COLORS[1] ?? '#ff6b6b',
@@ -67,6 +81,14 @@ export class CoNotesSettingTab extends PluginSettingTab {
 			t(language, key, vars);
 
 		return [
+			{
+				name: tr('settings.calendarViewsHeading'),
+				desc: tr('settings.calendarViewsDesc'),
+				render: (setting) => {
+					setting.settingEl.addClass('co-notes-settings-custom');
+					this.renderCalendarViewSettings(setting.controlEl);
+				},
+			},
 			{
 				name: tr('settings.language.name'),
 				desc: tr('settings.language.desc'),
@@ -134,14 +156,6 @@ export class CoNotesSettingTab extends PluginSettingTab {
 					min: MIN_DAY_CELL_MIN_HEIGHT,
 					max: MAX_DAY_CELL_MIN_HEIGHT,
 					step: 1,
-				},
-			},
-			{
-				name: tr('settings.calendarViewsHeading'),
-				desc: tr('settings.calendarViewsDesc'),
-				render: (setting) => {
-					setting.settingEl.addClass('co-notes-settings-custom');
-					this.renderCalendarViewSettings(setting.controlEl);
 				},
 			},
 			{
@@ -273,15 +287,23 @@ export class CoNotesSettingTab extends PluginSettingTab {
 
 	private async addCalendarView(): Promise<void> {
 		const colorIndex = this.plugin.settings.calendarViews.length % DEFAULT_COLORS.length;
+		const categoryId = generateId();
+		const category: NoteCategory = {
+			id: categoryId,
+			name: this.plugin.t('settings.newSource', { label: 'A' }),
+			color: DEFAULT_COLORS[colorIndex] ?? '#4a9eff',
+		};
 		const newView: CalendarViewConfig = {
 			id: generateId(),
+			categories: [category],
 			name: this.plugin.t('settings.newCalendarView'),
 			sources: [
 				{
 					id: generateId(),
-					name: this.plugin.t('settings.newSource', { label: 'A' }),
+					categoryId,
+					name: category.name,
 					pathTemplate: 'daily/{YYYY}/{MM}/{YYYY-MM-DD}',
-					color: DEFAULT_COLORS[colorIndex] ?? '#4a9eff',
+					color: category.color,
 				},
 			],
 		};
@@ -342,45 +364,214 @@ export class CoNotesSettingTab extends PluginSettingTab {
 			void this.deleteCalendarView(index);
 		});
 
-		// ── Sources ───────────────────────────────────────────────────────────
+		// ── Shared source categories ──────────────────────────────────────────
 		card.createDiv({
-			text: tr('settings.noteSources'),
+			text: tr('settings.categories'),
 			cls: 'co-notes-settings-section-title',
 		});
-
-		const sourcesContainer = card.createDiv('co-notes-settings-sources');
-		for (let j = 0; j < config.sources.length; j++) {
-			const source = config.sources[j];
-			if (source) {
-				this.renderSourceConfig(sourcesContainer, config, source, j);
-			}
+		const categoriesContainer = card.createDiv('co-notes-settings-sources');
+		for (const [categoryIndex, category] of (config.categories ?? []).entries()) {
+			this.renderCategoryConfig(categoriesContainer, config, category, categoryIndex);
 		}
-
-		const addSourceBtn = card.createEl('button', {
-			text: tr('settings.addSource'),
+		const addCategoryBtn = card.createEl('button', {
+			text: tr('settings.addCategory'),
 			cls: 'co-notes-btn co-notes-btn-secondary',
 		});
-		addSourceBtn.addEventListener('click', () => {
-			void this.addSource(config);
+		addCategoryBtn.addEventListener('click', () => void this.addCategory(config));
+
+		card.createDiv({
+			text: tr('settings.periodOrder'),
+			cls: 'co-notes-settings-section-title co-notes-settings-period-order-title',
+		});
+		const periodColumns = card.createDiv('co-notes-settings-period-columns');
+		for (const key of ['sources', 'weeklySources', 'monthlySources'] as const) {
+			this.renderPeriodOrderColumn(periodColumns, config, key);
+		}
+	}
+
+	private renderCategoryConfig(
+		container: HTMLElement,
+		config: CalendarViewConfig,
+		category: NoteCategory,
+		categoryIndex: number,
+	): void {
+		const tr = this.plugin.t.bind(this.plugin);
+		const card = container.createDiv('co-notes-settings-category-item');
+		const header = card.createDiv('co-notes-settings-category-header');
+		const colorInput = header.createEl('input', {
+			cls: 'co-notes-color-input',
+			attr: { type: 'color', value: category.color, 'aria-label': tr('settings.categoryColor') },
+		});
+		colorInput.addEventListener('change', () => {
+			category.color = colorInput.value;
+			normalizeSourceCategories(config);
+			void this.plugin.saveSettings().then(() => this.update());
 		});
 
-		// ── Optional weekly / monthly sources ─────────────────────────────────
-		this.renderOptionalSourceConfig(
-			card,
-			config,
-			'weeklySources',
-			'settings.weeklySource',
-			'settings.weeklySourceHint',
-			'weekly/{GGGG}/{GGGG}-W{WW}',
-		);
-		this.renderOptionalSourceConfig(
-			card,
-			config,
-			'monthlySources',
-			'settings.monthlySource',
-			'settings.monthlySourceHint',
-			'monthly/{YYYY}/{YYYY}-{MM}',
-		);
+		const nameInput = header.createEl('input', {
+			cls: 'co-notes-text-input co-notes-category-name-input',
+			attr: { type: 'text', value: category.name, 'aria-label': tr('settings.sourceName') },
+		});
+		nameInput.addEventListener('change', () => {
+			category.name = nameInput.value;
+			normalizeSourceCategories(config);
+			void this.plugin.saveSettings().then(() => this.update());
+		});
+
+		const deleteBtn = header.createEl('button', {
+			cls: 'co-notes-btn co-notes-btn-icon co-notes-btn-danger co-notes-ghost-icon',
+			attr: { 'aria-label': tr('settings.deleteCategory'), title: tr('settings.deleteCategory') },
+		});
+		setIcon(deleteBtn, 'trash-2');
+		deleteBtn.addEventListener('click', () => {
+			void this.deleteCategory(config, categoryIndex);
+		});
+
+		const periods = card.createDiv('co-notes-settings-category-periods');
+		for (const key of ['sources', 'weeklySources', 'monthlySources'] as const) {
+			const source = getPeriodSources(config, key).find(
+				(candidate) => candidate.categoryId === category.id,
+			);
+			const periodRow = periods.createDiv(
+				`co-notes-settings-category-period${source ? ' has-source' : ''}`,
+			);
+			const periodLabel = tr(getPeriodLabelKey(key));
+			const toggleBtn = periodRow.createEl('button', {
+				text: `${source ? '✓' : '+'} ${periodLabel}`,
+				cls: `co-notes-period-toggle${source ? ' is-enabled' : ''}`,
+				attr: source ? { title: tr('settings.removePeriod') } : {},
+			});
+			toggleBtn.addEventListener('click', () => {
+				if (source) {
+					config[key] = getPeriodSources(config, key).filter((item) => item.id !== source.id);
+					void this.plugin.saveSettings().then(() => this.update());
+				} else {
+					void this.addPeriodSource(config, category, key);
+				}
+			});
+			if (source) {
+				const configureBtn = periodRow.createEl('button', {
+					cls: 'co-notes-btn co-notes-btn-icon co-notes-ghost-icon co-notes-category-configure',
+					attr: { 'aria-label': tr('settings.configure'), title: tr('settings.configure') },
+				});
+				setIcon(configureBtn, 'settings-2');
+				configureBtn.addEventListener('click', () => {
+					new SourceConfigModal(this.app, this.plugin, source, key, async () => {
+						await this.plugin.saveSettings();
+					}).open();
+				});
+			}
+		}
+	}
+
+	private renderPeriodOrderColumn(
+		container: HTMLElement,
+		config: CalendarViewConfig,
+		key: SourcePeriodKey,
+	): void {
+		const tr = this.plugin.t.bind(this.plugin);
+		const column = container.createDiv('co-notes-settings-period-column');
+		column.createDiv({ text: tr(getPeriodLabelKey(key)), cls: 'co-notes-settings-period-title' });
+		const sources = getPeriodSources(config, key);
+		for (const [index, source] of sources.entries()) {
+			const row = column.createDiv('co-notes-settings-period-source');
+			row.createSpan({ text: String(index + 1), cls: 'co-notes-category-order' });
+			this.addSourceDragHandle(row, config, key, source.id);
+			const dot = row.createSpan('co-notes-legend-dot');
+			dot.style.backgroundColor = source.color;
+			row.createSpan({ text: source.name, cls: 'co-notes-period-source-name' });
+		}
+	}
+
+	private async addCategory(config: CalendarViewConfig): Promise<void> {
+		const categoryId = generateId();
+		const category: NoteCategory = {
+			id: categoryId,
+			name: this.plugin.t('settings.newSource', {
+				label: String.fromCharCode(65 + (config.categories?.length ?? 0)),
+			}),
+			color: DEFAULT_COLORS[(config.categories?.length ?? 0) % DEFAULT_COLORS.length] ?? '#4a9eff',
+		};
+		config.categories = [...(config.categories ?? []), category];
+		await this.addPeriodSource(config, category, 'sources');
+	}
+
+	private async addPeriodSource(
+		config: CalendarViewConfig,
+		category: NoteCategory,
+		key: SourcePeriodKey,
+	): Promise<void> {
+		config[key] = [
+			...getPeriodSources(config, key),
+			{
+				id: generateId(),
+				categoryId: category.id,
+				name: category.name,
+				color: category.color,
+				pathTemplate: getDefaultSourcePath(key),
+			},
+		];
+		await this.plugin.saveSettings();
+		this.update();
+	}
+
+	private async deleteCategory(config: CalendarViewConfig, categoryIndex: number): Promise<void> {
+		const category = config.categories?.[categoryIndex];
+		if (!category) return;
+		config.categories?.splice(categoryIndex, 1);
+		for (const key of ['sources', 'weeklySources', 'monthlySources'] as const) {
+			config[key] = getPeriodSources(config, key).filter(
+				(source) => source.categoryId !== category.id,
+			);
+		}
+		await this.plugin.saveSettings();
+		this.update();
+	}
+
+	private addCategoryDragHandle(
+		container: HTMLElement,
+		config: CalendarViewConfig,
+		categoryId: string,
+	): void {
+		const handle = container.createEl('button', {
+			text: '⠿',
+			cls: 'co-notes-source-drag-handle',
+			attr: {
+				type: 'button',
+				draggable: 'true',
+				'aria-label': this.plugin.t('settings.dragToReorder'),
+				title: this.plugin.t('settings.dragToReorder'),
+			},
+		});
+		const card = container.parentElement;
+		if (!card) return;
+		const data = JSON.stringify({ configId: config.id, categoryId });
+		handle.addEventListener('dragstart', (event: DragEvent) => {
+			event.dataTransfer?.setData('text/plain', data);
+			if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
+			card.addClass('co-notes-source-dragging');
+		});
+		handle.addEventListener('dragend', () => card.removeClass('co-notes-source-dragging'));
+		card.addEventListener('dragover', (event: DragEvent) => {
+			event.preventDefault();
+			card.addClass('co-notes-source-drag-over');
+		});
+		card.addEventListener('dragleave', () => card.removeClass('co-notes-source-drag-over'));
+		card.addEventListener('drop', (event: DragEvent) => {
+			event.preventDefault();
+			card.removeClass('co-notes-source-drag-over');
+			const payload = readCategoryDragPayload(event.dataTransfer?.getData('text/plain'));
+			if (!payload || payload.configId !== config.id || payload.categoryId === categoryId) return;
+			const categories = config.categories ?? [];
+			const fromIndex = categories.findIndex((category) => category.id === payload.categoryId);
+			const targetIndex = categories.findIndex((category) => category.id === categoryId);
+			if (fromIndex < 0 || targetIndex < 0) return;
+			const [dragged] = categories.splice(fromIndex, 1);
+			if (!dragged) return;
+			categories.splice(targetIndex, 0, dragged);
+			reorderSourcesByCategory(config);
+			void this.plugin.saveSettings().then(() => this.update());
+		});
 	}
 
 	private renderOptionalSourceConfig(
@@ -775,6 +966,36 @@ function readSourceDragPayload(
 			typeof record.key === 'string' &&
 			typeof record.sourceId === 'string'
 			? { configId: record.configId, key: record.key, sourceId: record.sourceId }
+			: null;
+	} catch {
+		return null;
+	}
+}
+
+function getDefaultSourcePath(key: SourcePeriodKey): string {
+	if (key === 'weeklySources') return 'weekly/{GGGG}/{GGGG}-W{WW}';
+	if (key === 'monthlySources') return 'monthly/{YYYY}/{YYYY}-{MM}';
+	return 'daily/{YYYY}/{MM}/{YYYY-MM-DD}';
+}
+
+function getPeriodLabelKey(
+	key: SourcePeriodKey,
+): 'settings.dailyPeriod' | 'settings.weeklyPeriod' | 'settings.monthlyPeriod' {
+	if (key === 'weeklySources') return 'settings.weeklyPeriod';
+	if (key === 'monthlySources') return 'settings.monthlyPeriod';
+	return 'settings.dailyPeriod';
+}
+
+function readCategoryDragPayload(
+	value: string | undefined,
+): { configId: string; categoryId: string } | null {
+	if (!value) return null;
+	try {
+		const payload: unknown = JSON.parse(value);
+		if (typeof payload !== 'object' || payload === null) return null;
+		const record = payload as Record<string, unknown>;
+		return typeof record.configId === 'string' && typeof record.categoryId === 'string'
+			? { configId: record.configId, categoryId: record.categoryId }
 			: null;
 	} catch {
 		return null;

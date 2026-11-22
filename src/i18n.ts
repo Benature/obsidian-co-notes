@@ -59,6 +59,19 @@ type TranslationKey =
 	| 'settings.markerSymbol'
 	| 'settings.markerSymbolDefault'
 	| 'settings.dragToReorder'
+	| 'settings.categories'
+	| 'settings.addCategory'
+	| 'settings.deleteCategory'
+	| 'settings.categoryColor'
+	| 'settings.categoryOrder'
+	| 'settings.periodOrder'
+	| 'settings.dailyPeriod'
+	| 'settings.weeklyPeriod'
+	| 'settings.monthlyPeriod'
+	| 'settings.configure'
+	| 'settings.removePeriod'
+	| 'settings.sourceDetails'
+	| 'settings.save'
 	| 'calendar.defaultTitle'
 	| 'calendar.configMissing'
 	| 'calendar.today'
@@ -138,6 +151,19 @@ const translations: Record<ResolvedLanguage, Record<TranslationKey, string>> = {
 		'settings.markerSymbol': '标记符号',
 		'settings.markerSymbolDefault': '默认 (✓)',
 		'settings.dragToReorder': '拖拽调整顺序',
+		'settings.categories': '来源分类',
+		'settings.addCategory': '+ 添加分类',
+		'settings.deleteCategory': '删除分类及其所有周期笔记来源',
+		'settings.categoryColor': '分类颜色',
+		'settings.categoryOrder': '分类 / 顺序',
+		'settings.periodOrder': '日报、周报、月报顺序',
+		'settings.dailyPeriod': '日报',
+		'settings.weeklyPeriod': '周报',
+		'settings.monthlyPeriod': '月报',
+		'settings.configure': '配置',
+		'settings.removePeriod': '移除此周期来源',
+		'settings.sourceDetails': '来源详细配置',
+		'settings.save': '保存',
 		'calendar.defaultTitle': '日历',
 		'calendar.configMissing': '未找到日历配置，请在插件设置中检查。',
 		'calendar.today': '今天',
@@ -219,6 +245,19 @@ const translations: Record<ResolvedLanguage, Record<TranslationKey, string>> = {
 		'settings.markerSymbol': 'Marker symbol',
 		'settings.markerSymbolDefault': 'Default (✓)',
 		'settings.dragToReorder': 'Drag to reorder',
+		'settings.categories': 'Source categories',
+		'settings.addCategory': '+ Add category',
+		'settings.deleteCategory': 'Delete category and all its period sources',
+		'settings.categoryColor': 'Category color',
+		'settings.categoryOrder': 'Category / order',
+		'settings.periodOrder': 'Daily, weekly, and monthly order',
+		'settings.dailyPeriod': 'Daily',
+		'settings.weeklyPeriod': 'Weekly',
+		'settings.monthlyPeriod': 'Monthly',
+		'settings.configure': 'Configure',
+		'settings.removePeriod': 'Remove this period source',
+		'settings.sourceDetails': 'Source details',
+		'settings.save': 'Save',
 		'calendar.defaultTitle': 'Calendar',
 		'calendar.configMissing': 'Calendar config not found. Check the plugin settings.',
 		'calendar.today': 'Today',

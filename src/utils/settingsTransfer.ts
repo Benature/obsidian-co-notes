@@ -4,9 +4,11 @@ import {
 	type CoNotesLanguage,
 	type CoNotesWeekStart,
 	type NoteSource,
+	type NoteCategory,
 	normalizeDayCellMinHeight,
 	normalizeSourceIndicatorHeight,
 } from '../types';
+import { normalizeSourceCategories } from './sourceCategories';
 
 export interface SettingsExport {
 	contents: string;
@@ -86,7 +88,11 @@ function parseCalendarView(value: unknown): CalendarViewConfig {
 	copyOptionalSources(record, 'monthlySources', 'monthlySource', view);
 	copyOptionalNumber(record, 'sourceIndicatorHeight', view);
 	copyOptionalNumber(record, 'dayCellMinHeight', view);
-	return view;
+	if (record.categories !== undefined) {
+		if (!Array.isArray(record.categories)) throw new Error('Invalid source categories');
+		view.categories = record.categories.map(parseNoteCategory);
+	}
+	return normalizeSourceCategories(view);
 }
 
 function parseNoteSource(value: unknown): NoteSource {
@@ -97,9 +103,19 @@ function parseNoteSource(value: unknown): NoteSource {
 		pathTemplate: expectString(record, 'pathTemplate'),
 		color: expectString(record, 'color'),
 	};
+	copyOptionalString(record, 'categoryId', source);
 	copyOptionalString(record, 'checkboxProperty', source);
 	copyOptionalString(record, 'markerSymbol', source);
 	return source;
+}
+
+function parseNoteCategory(value: unknown): NoteCategory {
+	const record = expectRecord(value);
+	return {
+		id: expectString(record, 'id'),
+		name: expectString(record, 'name'),
+		color: expectString(record, 'color'),
+	};
 }
 
 function copyOptionalSources(
@@ -123,7 +139,7 @@ function copyOptionalSources(
 
 function copyOptionalString(
 	record: Record<string, unknown>,
-	key: 'checkboxProperty' | 'markerSymbol',
+	key: 'categoryId' | 'checkboxProperty' | 'markerSymbol',
 	target: NoteSource,
 ): void {
 	const value = record[key];

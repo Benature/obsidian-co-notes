@@ -1,5 +1,13 @@
+export interface NoteCategory {
+	id: string;
+	name: string;
+	color: string;
+}
+
 export interface NoteSource {
 	id: string;
+	/** Shared category across daily, weekly, and monthly sources. */
+	categoryId?: string;
 	name: string;
 	/** Full path template without .md extension, e.g. "daily/{YYYY}/{MM}/{YYYY-MM-DD}_{ddd}". */
 	pathTemplate: string;
@@ -13,6 +21,7 @@ export interface NoteSource {
 export interface CalendarViewConfig {
 	id: string;
 	name: string;
+	categories?: NoteCategory[];
 	sources: NoteSource[];
 	/** Optional weekly note sources shown in a left column of the month calendar. */
 	weeklySources?: NoteSource[];

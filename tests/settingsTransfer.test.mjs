@@ -42,9 +42,11 @@ function createSettings() {
 			{
 				id: 'view-1',
 				name: '个人日志',
+				categories: [{ id: 'category-1', name: '日记 ✓', color: '#4a9eff' }],
 				sources: [
 					{
 						id: 'source-1',
+						categoryId: 'category-1',
 						name: '日记 ✓',
 						pathTemplate: 'daily/{YYYY-MM-DD}',
 						color: '#4a9eff',
@@ -55,17 +57,19 @@ function createSettings() {
 				weeklySources: [
 					{
 						id: 'weekly-1',
-						name: '周记',
+						categoryId: 'category-1',
+						name: '日记 ✓',
 						pathTemplate: 'weekly/{GGGG}-W{WW}',
-						color: '#845ef7',
+						color: '#4a9eff',
 					},
 				],
 				monthlySources: [
 					{
 						id: 'monthly-1',
-						name: '月记',
+						categoryId: 'category-1',
+						name: '日记 ✓',
 						pathTemplate: 'monthly/{YYYY}-{MM}',
-						color: '#20c997',
+						color: '#4a9eff',
 					},
 				],
 			},
@@ -137,6 +141,23 @@ test('migrates legacy single weekly/monthly source to arrays on import', () => {
 	assert.deepEqual(imported.calendarViews[0].monthlySources, expected.monthlySources);
 	assert.equal('weeklySource' in imported.calendarViews[0], false);
 	assert.equal('monthlySource' in imported.calendarViews[0], false);
+});
+
+test('creates shared categories for legacy sources and synchronizes their labels', () => {
+	const legacy = createSettings();
+	const view = legacy.calendarViews[0];
+	delete view.categories;
+	for (const source of [view.sources[0], view.weeklySources[0], view.monthlySources[0]]) {
+		delete source.categoryId;
+	}
+	view.weeklySources[0].name = '旧周记';
+	view.weeklySources[0].color = '#845ef7';
+
+	const imported = parseSettingsImport(JSON.stringify(legacy)).calendarViews[0];
+	assert.equal(imported.categories.length, 3);
+	assert.equal(imported.sources[0].categoryId, 'source-1');
+	assert.equal(imported.weeklySources[0].name, '旧周记');
+	assert.equal(imported.weeklySources[0].color, '#845ef7');
 });
 
 test('normalizes imported heights and discards unknown properties', () => {

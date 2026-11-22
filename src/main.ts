@@ -10,6 +10,7 @@ import {
 	getFilePath,
 } from './utils/dateUtils';
 import { HolidayService, isHolidayCountry } from './utils/holidays';
+import { normalizeSourceCategories } from './utils/sourceCategories';
 import {
 	DEFAULT_DAY_CELL_MIN_HEIGHT,
 	DEFAULT_SOURCE_INDICATOR_HEIGHT,
@@ -267,7 +268,7 @@ function migrateOptionalSources(
 			monthlySource?: NoteSource;
 		};
 		if (!legacy.weeklySource && !legacy.monthlySource) {
-			return view;
+			return normalizeSourceCategories(view);
 		}
 
 		const migrated: CalendarViewConfig = { ...view };
@@ -280,7 +281,7 @@ function migrateOptionalSources(
 		const record = migrated as unknown as Record<string, unknown>;
 		delete record['weeklySource'];
 		delete record['monthlySource'];
-		return migrated;
+		return normalizeSourceCategories(migrated);
 	});
 }
 
