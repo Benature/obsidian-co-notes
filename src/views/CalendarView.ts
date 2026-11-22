@@ -81,8 +81,11 @@ export class CalendarView extends ItemView {
 
 	async onOpen(): Promise<void> {
 		this.registerEvent(
-			this.app.workspace.on('active-leaf-change', () => {
-				this.render();
+			this.app.workspace.on('active-leaf-change', (leaf) => {
+				// Activating this view must not replace an opening native select.
+				if (leaf !== this.leaf) {
+					this.render();
+				}
 			}),
 		);
 		this.registerEvent(
