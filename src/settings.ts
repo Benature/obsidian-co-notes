@@ -27,6 +27,7 @@ export const DEFAULT_SETTINGS: CoNotesSettings = {
 	globalSourceIndicatorHeight: DEFAULT_SOURCE_INDICATOR_HEIGHT,
 	globalDayCellMinHeight: DEFAULT_DAY_CELL_MIN_HEIGHT,
 	language: 'system',
+	weekStart: 'monday',
 	calendarViews: [
 		{
 			id: generateId(),
@@ -73,6 +74,18 @@ export class CoNotesSettingTab extends PluginSettingTab {
 						system: tr('settings.language.option.system'),
 						'zh-CN': tr('settings.language.option.zh-CN'),
 						en: tr('settings.language.option.en'),
+					},
+				},
+			},
+			{
+				name: tr('settings.weekStart.name'),
+				desc: tr('settings.weekStart.desc'),
+				control: {
+					type: 'dropdown',
+					key: 'weekStart',
+					options: {
+						monday: tr('settings.weekStart.option.monday'),
+						sunday: tr('settings.weekStart.option.sunday'),
 					},
 				},
 			},
@@ -150,6 +163,11 @@ export class CoNotesSettingTab extends PluginSettingTab {
 			case 'language':
 				if (value === 'system' || value === 'zh-CN' || value === 'en') {
 					this.plugin.settings.language = value;
+				}
+				break;
+			case 'weekStart':
+				if (value === 'monday' || value === 'sunday') {
+					this.plugin.settings.weekStart = value;
 				}
 				break;
 			case 'confirmBeforeCreate':
@@ -322,7 +340,7 @@ export class CoNotesSettingTab extends PluginSettingTab {
 		this.renderOptionalSourceConfig(
 			card,
 			config,
-			'weeklySource',
+			'weeklySources',
 			'settings.weeklySource',
 			'settings.weeklySourceHint',
 			'weekly/{GGGG}/{GGGG}-W{WW}',
@@ -330,7 +348,7 @@ export class CoNotesSettingTab extends PluginSettingTab {
 		this.renderOptionalSourceConfig(
 			card,
 			config,
-			'monthlySource',
+			'monthlySources',
 			'settings.monthlySource',
 			'settings.monthlySourceHint',
 			'monthly/{YYYY}/{YYYY}-{MM}',
@@ -340,7 +358,7 @@ export class CoNotesSettingTab extends PluginSettingTab {
 	private renderOptionalSourceConfig(
 		container: HTMLElement,
 		config: CalendarViewConfig,
-		key: 'weeklySource' | 'monthlySource',
+		key: 'weeklySources' | 'monthlySources',
 		labelKey: 'settings.weeklySource' | 'settings.monthlySource',
 		hintKey: 'settings.weeklySourceHint' | 'settings.monthlySourceHint',
 		defaultPath: string,
@@ -353,25 +371,50 @@ export class CoNotesSettingTab extends PluginSettingTab {
 			cls: 'co-notes-settings-section-title',
 		});
 
-		const source = config[key];
-		if (!source) {
-			const addBtn = section.createEl('button', {
-				text: `+ ${tr(labelKey)}`,
-				cls: 'co-notes-btn co-notes-btn-secondary',
-			});
-			addBtn.addEventListener('click', () => {
-				config[key] = {
+		const sources = config[key] ?? [];
+		for (let i = 0; i < sources.length; i++) {
+			const source = sources[i];
+			if (source) {
+				this.renderOptionalSourceRow(section, config, key, source, i, defaultPath);
+			}
+		}
+
+		const addBtn = section.createEl('button', {
+			text: `+ ${tr(labelKey)}`,
+			cls: 'co-notes-btn co-notes-btn-secondary',
+		});
+		addBtn.addEventListener('click', () => {
+			const list = config[key] ?? [];
+			const color =
+				list.length === 0
+					? key === 'weeklySources'
+						? '#845ef7'
+						: '#20c997'
+					: (DEFAULT_COLORS[list.length % DEFAULT_COLORS.length] ?? '#4a9eff');
+			config[key] = [
+				...list,
+				{
 					id: generateId(),
 					name: tr(labelKey),
 					pathTemplate: defaultPath,
-					color: key === 'weeklySource' ? '#845ef7' : '#20c997',
-				};
-				void this.plugin.saveSettings().then(() => this.update());
-			});
-			section.createDiv({ text: tr(hintKey), cls: 'co-notes-field-hint' });
-			return;
-		}
+					color,
+				},
+			];
+			void this.plugin.saveSettings().then(() => this.update());
+		});
 
+		section.createDiv({ text: tr(hintKey), cls: 'co-notes-field-hint' });
+	}
+
+	private renderOptionalSourceRow(
+		section: HTMLElement,
+		config: CalendarViewConfig,
+		key: 'weeklySources' | 'monthlySources',
+		source: NoteSource,
+		index: number,
+		defaultPath: string,
+	): void {
+		const tr = this.plugin.t.bind(this.plugin);
 		const row = section.createDiv('co-notes-settings-source-item');
 
 		// Color picker
@@ -469,11 +512,9 @@ export class CoNotesSettingTab extends PluginSettingTab {
 			cls: 'co-notes-btn co-notes-btn-icon co-notes-btn-danger',
 		});
 		removeBtn.addEventListener('click', () => {
-			delete config[key];
+			config[key] = (config[key] ?? []).filter((_, i) => i !== index);
 			void this.plugin.saveSettings().then(() => this.update());
 		});
-
-		section.createDiv({ text: tr(hintKey), cls: 'co-notes-field-hint' });
 	}
 
 	private async deleteCalendarView(index: number): Promise<void> {

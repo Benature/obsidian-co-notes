@@ -35,6 +35,7 @@ function createSettings() {
 		globalSourceIndicatorHeight: 10,
 		globalDayCellMinHeight: 48,
 		language: 'zh-CN',
+		weekStart: 'monday',
 		calendarViews: [
 			{
 				id: 'view-1',
@@ -49,18 +50,22 @@ function createSettings() {
 						markerSymbol: '⭐',
 					},
 				],
-				weeklySource: {
-					id: 'weekly-1',
-					name: '周记',
-					pathTemplate: 'weekly/{GGGG}-W{WW}',
-					color: '#845ef7',
-				},
-				monthlySource: {
-					id: 'monthly-1',
-					name: '月记',
-					pathTemplate: 'monthly/{YYYY}-{MM}',
-					color: '#20c997',
-				},
+				weeklySources: [
+					{
+						id: 'weekly-1',
+						name: '周记',
+						pathTemplate: 'weekly/{GGGG}-W{WW}',
+						color: '#845ef7',
+					},
+				],
+				monthlySources: [
+					{
+						id: 'monthly-1',
+						name: '月记',
+						pathTemplate: 'monthly/{YYYY}-{MM}',
+						color: '#20c997',
+					},
+				],
 			},
 		],
 	};
@@ -90,6 +95,34 @@ test('round-trips all exported settings through import', () => {
 	assert.deepEqual(parseSettingsImport(exported.contents), settings);
 });
 
+test('defaults missing week start to Monday for legacy settings', () => {
+	const legacy = createSettings();
+	delete legacy.weekStart;
+
+	assert.equal(parseSettingsImport(JSON.stringify(legacy)).weekStart, 'monday');
+});
+
+test('round-trips Sunday as the configured week start', () => {
+	const settings = { ...createSettings(), weekStart: 'sunday' };
+	assert.equal(parseSettingsImport(JSON.stringify(settings)).weekStart, 'sunday');
+});
+
+test('migrates legacy single weekly/monthly source to arrays on import', () => {
+	const legacy = createSettings();
+	const view = legacy.calendarViews[0];
+	view.weeklySource = view.weeklySources[0];
+	delete view.weeklySources;
+	view.monthlySource = view.monthlySources[0];
+	delete view.monthlySources;
+
+	const imported = parseSettingsImport(JSON.stringify(legacy));
+	const expected = createSettings().calendarViews[0];
+	assert.deepEqual(imported.calendarViews[0].weeklySources, expected.weeklySources);
+	assert.deepEqual(imported.calendarViews[0].monthlySources, expected.monthlySources);
+	assert.equal('weeklySource' in imported.calendarViews[0], false);
+	assert.equal('monthlySource' in imported.calendarViews[0], false);
+});
+
 test('normalizes imported heights and discards unknown properties', () => {
 	const settings = {
 		...createSettings(),
@@ -110,6 +143,7 @@ test('rejects malformed or structurally invalid imports', () => {
 		'null',
 		'[]',
 		JSON.stringify({ ...createSettings(), language: 'fr' }),
+		JSON.stringify({ ...createSettings(), weekStart: 'saturday' }),
 		JSON.stringify({ ...createSettings(), confirmBeforeCreate: 'yes' }),
 		JSON.stringify({ ...createSettings(), calendarViews: {} }),
 		JSON.stringify({ ...createSettings(), globalDayCellMinHeight: '48' }),

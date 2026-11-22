@@ -1,5 +1,5 @@
 import { Notice, Plugin, TFile } from 'obsidian';
-import type { CoNotesSettings, CalendarViewConfig } from './types';
+import type { CoNotesSettings, CalendarViewConfig, NoteSource } from './types';
 import { DEFAULT_SETTINGS, CoNotesSettingTab } from './settings';
 import { CALENDAR_VIEW_TYPE, CalendarView } from './views/CalendarView';
 import { resolveLanguage, t, type ResolvedLanguage } from './i18n';
@@ -190,10 +190,13 @@ export default class CoNotesPlugin extends Plugin {
 		const savedData: unknown = await this.loadData();
 		const saved = isRecord(savedData) ? (savedData as Partial<CoNotesSettings>) : null;
 		const migratedHeights = getMigratedGlobalHeights(saved?.calendarViews);
+		const migratedViews = migrateOptionalSources(saved?.calendarViews);
 		this.settings = {
 			...DEFAULT_SETTINGS,
 			...migratedHeights,
 			...(saved ?? {}),
+			calendarViews: migratedViews ?? DEFAULT_SETTINGS.calendarViews,
+			weekStart: saved?.weekStart === 'sunday' ? 'sunday' : 'monday',
 			globalSourceIndicatorHeight: normalizeSourceIndicatorHeight(
 				saved?.globalSourceIndicatorHeight ?? migratedHeights.globalSourceIndicatorHeight,
 			),
@@ -223,6 +226,35 @@ export default class CoNotesPlugin extends Plugin {
 	t(key: Parameters<typeof t>[1], vars?: Record<string, string>): string {
 		return t(this.getLanguage(), key, vars);
 	}
+}
+
+function migrateOptionalSources(
+	calendarViews: CalendarViewConfig[] | undefined,
+): CalendarViewConfig[] | undefined {
+	if (!calendarViews) {
+		return calendarViews;
+	}
+	return calendarViews.map((view) => {
+		const legacy = view as CalendarViewConfig & {
+			weeklySource?: NoteSource;
+			monthlySource?: NoteSource;
+		};
+		if (!legacy.weeklySource && !legacy.monthlySource) {
+			return view;
+		}
+
+		const migrated: CalendarViewConfig = { ...view };
+		if (legacy.weeklySource && !migrated.weeklySources) {
+			migrated.weeklySources = [legacy.weeklySource];
+		}
+		if (legacy.monthlySource && !migrated.monthlySources) {
+			migrated.monthlySources = [legacy.monthlySource];
+		}
+		const record = migrated as unknown as Record<string, unknown>;
+		delete record['weeklySource'];
+		delete record['monthlySource'];
+		return migrated;
+	});
 }
 
 function getMigratedGlobalHeights(

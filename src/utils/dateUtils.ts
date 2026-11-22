@@ -1,4 +1,5 @@
 import { moment } from 'obsidian';
+import type { CoNotesWeekStart } from '../types';
 
 interface MomentDate {
 	format(template: string): string;
@@ -42,6 +43,30 @@ export function formatPath(template: string, date: Date): string {
 export function getFilePath(template: string, date: Date): string {
 	const path = formatPath(template, date);
 	return path.endsWith('.md') ? path : `${path}.md`;
+}
+
+/** Number of cells from the previous month before the first day of a month. */
+export function getLeadingDayCount(firstDayOfMonth: Date, weekStart: CoNotesWeekStart): number {
+	const firstWeekday = weekStart === 'monday' ? 1 : 0;
+	return (firstDayOfMonth.getDay() - firstWeekday + 7) % 7;
+}
+
+/**
+ * Return the Thursday that determines the ISO week containing a displayed row.
+ * Using Thursday avoids assigning a Sunday-starting row entirely to the ISO week
+ * of its Sunday when the row crosses an ISO week boundary.
+ */
+export function getIsoWeekReferenceDate(
+	weekStartDate: Date,
+	weekStart: CoNotesWeekStart,
+): Date {
+	const firstWeekday = weekStart === 'monday' ? 1 : 0;
+	const daysUntilThursday = (4 - firstWeekday + 7) % 7;
+	return new Date(
+		weekStartDate.getFullYear(),
+		weekStartDate.getMonth(),
+		weekStartDate.getDate() + daysUntilThursday,
+	);
 }
 
 /** ISO week number (1-53), consistent with moment's WW format token. */

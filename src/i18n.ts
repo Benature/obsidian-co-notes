@@ -1,5 +1,5 @@
 import { getLanguage } from 'obsidian';
-import type { CoNotesLanguage } from './types';
+import type { CoNotesLanguage, CoNotesWeekStart } from './types';
 
 export type ResolvedLanguage = 'zh-CN' | 'en';
 
@@ -18,6 +18,10 @@ type TranslationKey =
 	| 'settings.language.option.system'
 	| 'settings.language.option.zh-CN'
 	| 'settings.language.option.en'
+	| 'settings.weekStart.name'
+	| 'settings.weekStart.desc'
+	| 'settings.weekStart.option.monday'
+	| 'settings.weekStart.option.sunday'
 	| 'settings.confirmBeforeCreate.name'
 	| 'settings.confirmBeforeCreate.desc'
 	| 'settings.sourceIndicatorHeight.name'
@@ -84,6 +88,10 @@ const translations: Record<ResolvedLanguage, Record<TranslationKey, string>> = {
 		'settings.language.option.system': '跟随系统',
 		'settings.language.option.zh-CN': '中文',
 		'settings.language.option.en': 'English',
+		'settings.weekStart.name': '每周开始于',
+		'settings.weekStart.desc': '设置月历每行的起始星期；周数仍按 ISO 8601 计算。',
+		'settings.weekStart.option.monday': '周一',
+		'settings.weekStart.option.sunday': '周日',
 		'settings.confirmBeforeCreate.name': '创建笔记前确认',
 		'settings.confirmBeforeCreate.desc': '点击缺失笔记时，先确认是否创建。',
 		'settings.sourceIndicatorHeight.name': '来源格高度',
@@ -152,6 +160,10 @@ const translations: Record<ResolvedLanguage, Record<TranslationKey, string>> = {
 		'settings.language.option.system': 'Follow system',
 		'settings.language.option.zh-CN': 'Chinese',
 		'settings.language.option.en': 'English',
+		'settings.weekStart.name': 'Week starts on',
+		'settings.weekStart.desc': 'Choose the first weekday of each month-calendar row. Week numbers still follow ISO 8601.',
+		'settings.weekStart.option.monday': 'Monday',
+		'settings.weekStart.option.sunday': 'Sunday',
 		'settings.confirmBeforeCreate.name': 'Create note confirmation',
 		'settings.confirmBeforeCreate.desc':
 			'Ask for confirmation before creating a missing note.',
@@ -230,8 +242,13 @@ export function resolveLanguage(language: CoNotesLanguage): ResolvedLanguage {
 	return normalizeLanguage(obsidianLanguage) ?? normalizeLanguage(browserLanguage) ?? 'en';
 }
 
-export function getWeekdayLabels(language: ResolvedLanguage): string[] {
-	return WEEKDAY_LABELS[language];
+export function getWeekdayLabels(
+	language: ResolvedLanguage,
+	weekStart: CoNotesWeekStart = 'monday',
+): string[] {
+	const labels = WEEKDAY_LABELS[language];
+	const offset = weekStart === 'monday' ? 1 : 0;
+	return Array.from({ length: 7 }, (_, index) => labels[(index + offset) % 7] ?? '');
 }
 
 export function getMonthLabels(language: ResolvedLanguage): string[] {

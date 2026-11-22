@@ -10,6 +10,8 @@ import { build } from 'esbuild';
 let tempDir;
 let formatPath;
 let getFilePath;
+let getIsoWeekReferenceDate;
+let getLeadingDayCount;
 
 before(async () => {
 	tempDir = await mkdtemp(join(tmpdir(), 'co-notes-date-utils-'));
@@ -59,7 +61,9 @@ before(async () => {
 		],
 	});
 
-	({ formatPath, getFilePath } = await import(pathToFileURL(outfile).href));
+	({ formatPath, getFilePath, getIsoWeekReferenceDate, getLeadingDayCount } = await import(
+		pathToFileURL(outfile).href
+	));
 });
 
 after(async () => {
@@ -97,4 +101,26 @@ test('keeps an unclosed brace expression literal', () => {
 test('appends the markdown extension exactly once', () => {
 	assert.equal(getFilePath('business/{YYYY-MM-DD}', date), 'business/2026-11-05.md');
 	assert.equal(getFilePath('business/{YYYY-MM-DD}.md', date), 'business/2026-11-05.md');
+});
+
+test('calculates leading cells for Monday and Sunday calendar rows', () => {
+	const january2027 = new Date(2027, 0, 1); // Friday
+	assert.equal(getLeadingDayCount(january2027, 'monday'), 4);
+	assert.equal(getLeadingDayCount(january2027, 'sunday'), 5);
+});
+
+test('uses Thursday to assign ISO weeks consistently to Monday-starting rows', () => {
+	const previousYearRow = getIsoWeekReferenceDate(new Date(2026, 11, 28), 'monday');
+	const newYearRow = getIsoWeekReferenceDate(new Date(2027, 0, 4), 'monday');
+
+	assert.equal(previousYearRow.toDateString(), new Date(2026, 11, 31).toDateString());
+	assert.equal(newYearRow.toDateString(), new Date(2027, 0, 7).toDateString());
+});
+
+test('does not label an all-new-year Sunday-starting row as the previous ISO week', () => {
+	const previousYearRow = getIsoWeekReferenceDate(new Date(2026, 11, 27), 'sunday');
+	const newYearRow = getIsoWeekReferenceDate(new Date(2027, 0, 3), 'sunday');
+
+	assert.equal(previousYearRow.toDateString(), new Date(2026, 11, 31).toDateString());
+	assert.equal(newYearRow.toDateString(), new Date(2027, 0, 7).toDateString());
 });

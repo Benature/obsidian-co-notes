@@ -14,10 +14,10 @@ export interface CalendarViewConfig {
 	id: string;
 	name: string;
 	sources: NoteSource[];
-	/** Optional weekly note source shown in a left column of the month calendar. */
-	weeklySource?: NoteSource;
-	/** Optional monthly note source shown in the year calendar. */
-	monthlySource?: NoteSource;
+	/** Optional weekly note sources shown in a left column of the month calendar. */
+	weeklySources?: NoteSource[];
+	/** Optional monthly note sources shown in the year calendar. */
+	monthlySources?: NoteSource[];
 	sourceIndicatorHeight?: number;
 	dayCellMinHeight?: number;
 }
@@ -28,9 +28,11 @@ export interface CoNotesSettings {
 	globalSourceIndicatorHeight: number;
 	globalDayCellMinHeight: number;
 	language: CoNotesLanguage;
+	weekStart: CoNotesWeekStart;
 }
 
 export type CoNotesLanguage = 'system' | 'zh-CN' | 'en';
+export type CoNotesWeekStart = 'monday' | 'sunday';
 
 export const DEFAULT_COLORS = [
 	'#4a9eff',

@@ -13,10 +13,17 @@ import type CoNotesPlugin from '../main';
 import { getMonthLabels, getWeekdayLabels } from '../i18n';
 import {
 	type CalendarViewConfig,
+	type NoteSource,
 	normalizeDayCellMinHeight,
 	normalizeSourceIndicatorHeight,
 } from '../types';
-import { getFilePath, getIsoWeekNumber, isSameDay } from '../utils/dateUtils';
+import {
+	getFilePath,
+	getIsoWeekNumber,
+	getIsoWeekReferenceDate,
+	getLeadingDayCount,
+	isSameDay,
+} from '../utils/dateUtils';
 import { addActionHandlers } from '../utils/actionEvents';
 
 export const CALENDAR_VIEW_TYPE = 'co-notes-calendar';
@@ -133,6 +140,7 @@ export class CalendarView extends ItemView {
 		const language = this.plugin.getLanguage();
 		const tr = this.plugin.t.bind(this.plugin);
 		const activeFilePath = this.app.workspace.getActiveFile()?.path ?? null;
+		const weekStart = this.plugin.settings.weekStart;
 
 		// ── Header ────────────────────────────────────────────────────────────
 		const header = container.createDiv('co-notes-calendar-header');
@@ -241,19 +249,23 @@ export class CalendarView extends ItemView {
 
 		// ── Calendar grid ─────────────────────────────────────────────────────
 		const grid = container.createDiv('co-notes-calendar-grid');
-		const hasWeekly = !!config.weeklySource;
+		const weeklySources = config.weeklySources ?? [];
+		const hasWeekly = weeklySources.length > 0;
 		if (hasWeekly) {
 			grid.addClass('co-notes-calendar-with-weekly');
+			grid.style.setProperty('--co-notes-weekly-columns', String(weeklySources.length));
 		}
 
-		// Header row: optional weekly column + 7 weekday columns
+		// Header row: optional weekly columns + 7 weekday columns
 		if (hasWeekly) {
-			grid.createDiv({
-				text: tr('calendar.weekHeader'),
-				cls: 'co-notes-day-header co-notes-weekly-header',
-			});
+			for (let i = 0; i < weeklySources.length; i++) {
+				grid.createDiv({
+					text: tr('calendar.weekHeader'),
+					cls: 'co-notes-day-header co-notes-weekly-header',
+				});
+			}
 		}
-		const dayNames = getWeekdayLabels(language);
+		const dayNames = getWeekdayLabels(language, weekStart);
 		for (const name of dayNames) {
 			grid.createDiv({ text: name, cls: 'co-notes-day-header' });
 		}
@@ -261,19 +273,22 @@ export class CalendarView extends ItemView {
 		const firstDay = new Date(this.currentYear, this.currentMonth, 1);
 		const daysInMonth = new Date(this.currentYear, this.currentMonth + 1, 0).getDate();
 		const prevMonthDays = new Date(this.currentYear, this.currentMonth, 0).getDate();
-		const leadingEmptyCells = firstDay.getDay();
+		const leadingEmptyCells = getLeadingDayCount(firstDay, weekStart);
 		const weekRows = Math.ceil((leadingEmptyCells + daysInMonth) / 7);
 		grid.style.setProperty('--co-notes-calendar-week-rows', String(weekRows));
 
-		// Render week by week so the weekly note sits at the start of each row
+		// Render week by week so the weekly notes sit at the start of each row
 		for (let week = 0; week < weekRows; week++) {
-			if (hasWeekly && config.weeklySource) {
+			if (hasWeekly) {
 				const weekStartDate = new Date(
 					this.currentYear,
 					this.currentMonth,
 					1 - leadingEmptyCells + week * 7,
 				);
-				this.renderWeeklyCell(grid, config.weeklySource, weekStartDate, activeFilePath);
+				const weekReferenceDate = getIsoWeekReferenceDate(weekStartDate, weekStart);
+				for (const weeklySource of weeklySources) {
+					this.renderWeeklyCell(grid, weeklySource, weekReferenceDate, activeFilePath);
+				}
 			}
 
 			for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
@@ -361,25 +376,30 @@ export class CalendarView extends ItemView {
 		}
 
 		// ── Legend (bottom) ───────────────────────────────────────────────────
-		if (config.sources.length > 0) {
-			const legend = container.createDiv('co-notes-legend');
-			for (const source of config.sources) {
-				const item = legend.createDiv('co-notes-legend-item');
-				const dot = item.createDiv('co-notes-legend-dot');
-				dot.style.backgroundColor = source.color;
-				item.createSpan({ text: source.name });
-			}
+		this.renderLegend(container, [...config.sources, ...(config.weeklySources ?? [])]);
+	}
+
+	private renderLegend(container: HTMLElement, sources: NoteSource[]): void {
+		if (sources.length === 0) {
+			return;
+		}
+		const legend = container.createDiv('co-notes-legend');
+		for (const source of sources) {
+			const item = legend.createDiv('co-notes-legend-item');
+			const dot = item.createDiv('co-notes-legend-dot');
+			dot.style.backgroundColor = source.color;
+			item.createSpan({ text: source.name });
 		}
 	}
 
 	private renderWeeklyCell(
 		grid: HTMLElement,
-		source: NonNullable<CalendarViewConfig['weeklySource']>,
-		weekStartDate: Date,
+		source: NoteSource,
+		weekReferenceDate: Date,
 		activeFilePath: string | null,
 	): void {
 		const tr = this.plugin.t.bind(this.plugin);
-		const filePath = getFilePath(source.pathTemplate, weekStartDate);
+		const filePath = getFilePath(source.pathTemplate, weekReferenceDate);
 		const file = this.app.vault.getAbstractFileByPath(filePath);
 		const exists = file instanceof TFile;
 		const isActive = activeFilePath !== null && activeFilePath === filePath;
@@ -390,7 +410,7 @@ export class CalendarView extends ItemView {
 		}
 
 		cell.createDiv({
-			text: `W${getIsoWeekNumber(weekStartDate)}`,
+			text: `W${getIsoWeekNumber(weekReferenceDate)}`,
 			cls: 'co-notes-weekly-number',
 		});
 
@@ -472,7 +492,7 @@ export class CalendarView extends ItemView {
 		// ── Month grid ────────────────────────────────────────────────────────
 		const grid = container.createDiv('co-notes-year-grid');
 		const monthLabels = getMonthLabels(language);
-		const monthlySource = config.monthlySource;
+		const monthlySources = config.monthlySources ?? [];
 
 		for (let m = 0; m < 12; m++) {
 			const monthDate = new Date(this.currentYear, m, 1);
@@ -489,7 +509,7 @@ export class CalendarView extends ItemView {
 				cls: 'co-notes-month-name',
 			});
 
-			if (monthlySource) {
+			for (const monthlySource of monthlySources) {
 				const filePath = getFilePath(monthlySource.pathTemplate, monthDate);
 				const file = this.app.vault.getAbstractFileByPath(filePath);
 				const exists = file instanceof TFile;
@@ -552,6 +572,9 @@ export class CalendarView extends ItemView {
 				this.render();
 			});
 		}
+
+		// ── Legend (bottom) ───────────────────────────────────────────────────
+		this.renderLegend(container, [...config.sources, ...(config.monthlySources ?? [])]);
 	}
 
 	private countNotesInMonth(

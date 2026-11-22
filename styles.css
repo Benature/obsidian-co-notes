@@ -158,7 +158,7 @@
 }
 
 .co-notes-calendar-with-weekly {
-	grid-template-columns: minmax(34px, 0.35fr) repeat(7, 1fr);
+	grid-template-columns: repeat(var(--co-notes-weekly-columns, 1), minmax(34px, 0.35fr)) repeat(7, 1fr);
 }
 
 /* ── Weekly note column ─────────────────────────────────────────────────── */

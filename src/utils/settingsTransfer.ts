@@ -2,6 +2,7 @@ import {
 	type CalendarViewConfig,
 	type CoNotesSettings,
 	type CoNotesLanguage,
+	type CoNotesWeekStart,
 	type NoteSource,
 	normalizeDayCellMinHeight,
 	normalizeSourceIndicatorHeight,
@@ -33,6 +34,10 @@ export function parseSettingsImport(contents: string): CoNotesSettings {
 	if (!isLanguage(language)) {
 		throw new Error('Invalid settings language');
 	}
+	const weekStart = record.weekStart ?? 'monday';
+	if (!isWeekStart(weekStart)) {
+		throw new Error('Invalid week start setting');
+	}
 	if (typeof record.confirmBeforeCreate !== 'boolean') {
 		throw new Error('Invalid create-note confirmation setting');
 	}
@@ -49,6 +54,7 @@ export function parseSettingsImport(contents: string): CoNotesSettings {
 			expectNumber(record, 'globalDayCellMinHeight'),
 		),
 		language,
+		weekStart,
 		calendarViews: record.calendarViews.map(parseCalendarView),
 	};
 }
@@ -64,8 +70,8 @@ function parseCalendarView(value: unknown): CalendarViewConfig {
 		name: expectString(record, 'name'),
 		sources: record.sources.map(parseNoteSource),
 	};
-	copyOptionalSource(record, 'weeklySource', view);
-	copyOptionalSource(record, 'monthlySource', view);
+	copyOptionalSources(record, 'weeklySources', 'weeklySource', view);
+	copyOptionalSources(record, 'monthlySources', 'monthlySource', view);
 	copyOptionalNumber(record, 'sourceIndicatorHeight', view);
 	copyOptionalNumber(record, 'dayCellMinHeight', view);
 	return view;
@@ -84,14 +90,22 @@ function parseNoteSource(value: unknown): NoteSource {
 	return source;
 }
 
-function copyOptionalSource(
+function copyOptionalSources(
 	record: Record<string, unknown>,
-	key: 'weeklySource' | 'monthlySource',
+	key: 'weeklySources' | 'monthlySources',
+	legacyKey: 'weeklySource' | 'monthlySource',
 	target: CalendarViewConfig,
 ): void {
 	const value = record[key];
-	if (value !== undefined) {
-		target[key] = parseNoteSource(value);
+	if (Array.isArray(value)) {
+		target[key] = value.map(parseNoteSource);
+		return;
+	}
+
+	// Import legacy single-source format (v0.4.3 and earlier).
+	const legacy = record[legacyKey];
+	if (legacy !== undefined) {
+		target[key] = [parseNoteSource(legacy)];
 	}
 }
 
@@ -150,4 +164,8 @@ function expectNumber(record: Record<string, unknown>, key: string): number {
 
 function isLanguage(value: string): value is CoNotesLanguage {
 	return value === 'system' || value === 'zh-CN' || value === 'en';
+}
+
+function isWeekStart(value: unknown): value is CoNotesWeekStart {
+	return value === 'monday' || value === 'sunday';
 }
