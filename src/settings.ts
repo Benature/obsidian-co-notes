@@ -444,6 +444,7 @@ export class CoNotesSettingTab extends PluginSettingTab {
 	): void {
 		const tr = this.plugin.t.bind(this.plugin);
 		const row = section.createDiv('co-notes-settings-source-item');
+		this.addSourceDragHandle(row, config, key, source.id);
 
 		// Color picker
 		const colorWrap = row.createDiv('co-notes-settings-source-color');
@@ -574,6 +575,7 @@ export class CoNotesSettingTab extends PluginSettingTab {
 	): void {
 		const row = container.createDiv('co-notes-settings-source-item');
 		const tr = this.plugin.t.bind(this.plugin);
+		this.addSourceDragHandle(row, config, 'sources', source.id);
 
 		// Color picker
 		const colorWrap = row.createDiv('co-notes-settings-source-color');
@@ -668,24 +670,6 @@ export class CoNotesSettingTab extends PluginSettingTab {
 
 		const actionsWrap = row.createDiv('co-notes-settings-source-actions');
 
-		const moveUpBtn = actionsWrap.createEl('button', {
-			text: '↑',
-			cls: 'co-notes-btn co-notes-btn-icon',
-		});
-		moveUpBtn.disabled = sourceIndex === 0;
-		moveUpBtn.addEventListener('click', () => {
-			void this.moveSource(config, sourceIndex, -1);
-		});
-
-		const moveDownBtn = actionsWrap.createEl('button', {
-			text: '↓',
-			cls: 'co-notes-btn co-notes-btn-icon',
-		});
-		moveDownBtn.disabled = sourceIndex === config.sources.length - 1;
-		moveDownBtn.addEventListener('click', () => {
-			void this.moveSource(config, sourceIndex, 1);
-		});
-
 		// Delete button
 		const deleteBtn = actionsWrap.createEl('button', {
 			text: '×',
@@ -702,23 +686,97 @@ export class CoNotesSettingTab extends PluginSettingTab {
 		this.update();
 	}
 
-	private async moveSource(
+	private addSourceDragHandle(
+		row: HTMLElement,
 		config: CalendarViewConfig,
-		sourceIndex: number,
-		direction: -1 | 1,
+		key: 'sources' | 'weeklySources' | 'monthlySources',
+		sourceId: string,
+	): void {
+		const handle = row.createEl('button', {
+			text: '⠿',
+			cls: 'co-notes-source-drag-handle',
+			attr: {
+				type: 'button',
+				draggable: 'true',
+				'aria-label': this.plugin.t('settings.dragToReorder'),
+				title: this.plugin.t('settings.dragToReorder'),
+			},
+		});
+		const dragData = JSON.stringify({ configId: config.id, key, sourceId });
+
+		handle.addEventListener('dragstart', (event: DragEvent) => {
+			if (!event.dataTransfer) return;
+			event.dataTransfer.effectAllowed = 'move';
+			event.dataTransfer.setData('text/plain', dragData);
+			row.addClass('co-notes-source-dragging');
+		});
+		handle.addEventListener('dragend', () => {
+			row.removeClass('co-notes-source-dragging');
+			row.parentElement
+				?.querySelectorAll('.co-notes-source-drag-over')
+				.forEach((element) => element.removeClass('co-notes-source-drag-over'));
+		});
+
+		row.addEventListener('dragover', (event: DragEvent) => {
+			event.preventDefault();
+			if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+			row.addClass('co-notes-source-drag-over');
+		});
+		row.addEventListener('dragleave', (event: DragEvent) => {
+			if (!(event.relatedTarget instanceof Node) || !row.contains(event.relatedTarget)) {
+				row.removeClass('co-notes-source-drag-over');
+			}
+		});
+		row.addEventListener('drop', (event: DragEvent) => {
+			event.preventDefault();
+			row.removeClass('co-notes-source-drag-over');
+			const payload = readSourceDragPayload(event.dataTransfer?.getData('text/plain'));
+			if (
+				!payload ||
+				payload.configId !== config.id ||
+				payload.key !== key ||
+				payload.sourceId === sourceId
+			) {
+				return;
+			}
+			void this.reorderSource(config, key, payload.sourceId, sourceId);
+		});
+	}
+
+	private async reorderSource(
+		config: CalendarViewConfig,
+		key: 'sources' | 'weeklySources' | 'monthlySources',
+		sourceId: string,
+		targetId: string,
 	): Promise<void> {
-		const targetIndex = sourceIndex + direction;
-		if (targetIndex < 0 || targetIndex >= config.sources.length) {
-			return;
-		}
+		const sources = config[key] ?? [];
+		const sourceIndex = sources.findIndex((source) => source.id === sourceId);
+		const targetIndex = sources.findIndex((source) => source.id === targetId);
+		if (sourceIndex < 0 || targetIndex < 0) return;
 
-		const [source] = config.sources.splice(sourceIndex, 1);
-		if (!source) {
-			return;
-		}
-
-		config.sources.splice(targetIndex, 0, source);
+		const [source] = sources.splice(sourceIndex, 1);
+		if (!source) return;
+		sources.splice(targetIndex, 0, source);
+		config[key] = sources;
 		await this.plugin.saveSettings();
 		this.update();
+	}
+}
+
+function readSourceDragPayload(
+	value: string | undefined,
+): { configId: string; key: string; sourceId: string } | null {
+	if (!value) return null;
+	try {
+		const payload: unknown = JSON.parse(value);
+		if (typeof payload !== 'object' || payload === null) return null;
+		const record = payload as Record<string, unknown>;
+		return typeof record.configId === 'string' &&
+			typeof record.key === 'string' &&
+			typeof record.sourceId === 'string'
+			? { configId: record.configId, key: record.key, sourceId: record.sourceId }
+			: null;
+	} catch {
+		return null;
 	}
 }

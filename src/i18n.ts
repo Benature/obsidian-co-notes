@@ -58,6 +58,7 @@ type TranslationKey =
 	| 'settings.checkboxPropertyPlaceholder'
 	| 'settings.markerSymbol'
 	| 'settings.markerSymbolDefault'
+	| 'settings.dragToReorder'
 	| 'calendar.defaultTitle'
 	| 'calendar.configMissing'
 	| 'calendar.today'
@@ -136,6 +137,7 @@ const translations: Record<ResolvedLanguage, Record<TranslationKey, string>> = {
 		'settings.checkboxPropertyPlaceholder': '例如：done（留空则不标记）',
 		'settings.markerSymbol': '标记符号',
 		'settings.markerSymbolDefault': '默认 (✓)',
+		'settings.dragToReorder': '拖拽调整顺序',
 		'calendar.defaultTitle': '日历',
 		'calendar.configMissing': '未找到日历配置，请在插件设置中检查。',
 		'calendar.today': '今天',
@@ -216,6 +218,7 @@ const translations: Record<ResolvedLanguage, Record<TranslationKey, string>> = {
 		'settings.checkboxPropertyPlaceholder': 'e.g. done (empty to disable)',
 		'settings.markerSymbol': 'Marker symbol',
 		'settings.markerSymbolDefault': 'Default (✓)',
+		'settings.dragToReorder': 'Drag to reorder',
 		'calendar.defaultTitle': 'Calendar',
 		'calendar.configMissing': 'Calendar config not found. Check the plugin settings.',
 		'calendar.today': 'Today',
